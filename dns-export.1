@@ -1,0 +1,25 @@
+.TH DNS-EXPORT 1
+.SH NAME
+dns-export \- export dns info to syslog server
+.SH SYNOPSIS
+.B dns-export
+[\fB\-r\fR \fIfile.pcap\fR]
+[\fB\-i\fR \fIinterface\fR]
+[\fB\-s\fR \fIsyslog-server\fR]
+[\fB\-t\fR \fIseconds\fR]
+.SH DESCRIPTION
+.B dns-export
+Zpracovava data protokolu DNS (Domain Name System) a vybrane statistiky exportuje pomocou protokolu Syslog na centralni logovaci server. 
+.SH OPTIONS
+.TP
+.BR \-r =file.pcap
+Zpracuje zadany pcap soubor.
+.TP
+.BR \-i =interface
+Nasloucha na danem sitovem rozhrani a zpracovava DNS provoz.
+.TP
+.BR \-s =syslog-server
+Hostname/IPv4/IPv6 adresa syslog serveru.
+.TP
+.BR \-t =seconds
+Doba vypoctu statistik, vychozi hodnota 60s.
