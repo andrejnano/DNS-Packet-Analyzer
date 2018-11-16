@@ -37,4 +37,12 @@ class Config {
         bool isTimeSet() { return timeSet; }
 };
 
+/**
+ *  @brief Argument parsing
+ * 
+ *  @param argc, argv arguments passed into the process
+ *  @return configuration object
+ */
+std::unique_ptr<Config> parseArguments(int argc, char **argv);
+
 #endif // CONFIG_H_

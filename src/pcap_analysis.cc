@@ -41,7 +41,7 @@ void pcap_analysis(u_char* user_argument, const struct pcap_pkthdr* h, const u_c
         net_type = ntohs(eth_hdr->ether_type);
         packet_offset_size += sizeof(*eth_hdr);
     }
-    // L2 | linux cooked frame
+    // L2 | linux cooked capture frame
     else if (link_type == LINKTYPE_LINUX_SLL)
     {
         struct linuxhdr * linux_hdr = (struct linuxhdr*) bytes;
@@ -51,7 +51,7 @@ void pcap_analysis(u_char* user_argument, const struct pcap_pkthdr* h, const u_c
     // L2 | unsupported
     else
     {
-        std::cout << "unsupported: " << link_type << std::endl;
+        //debug: std::cerr << "unsupported L2 header: " << link_type << std::endl;
         return;
     }
 

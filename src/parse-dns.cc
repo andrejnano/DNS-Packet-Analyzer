@@ -42,7 +42,7 @@ void parse_dns(const u_char* bytes, size_t packet_offset_size)
     /* ignore both AUTHORITY & ADDITIONAL sections */
 }
 
-std::string parse_dns_answer_rdata(const u_char* bytes, size_t packet_offset_size, uint16_t type)
+std::string parse_dns_answer_rdata(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length, uint16_t type)
 {
     // depending on the DNS message type, parse the RDATA field differently
     switch (type) {
@@ -78,34 +78,24 @@ std::string parse_dns_answer_rdata(const u_char* bytes, size_t packet_offset_siz
         }
         case DNS_QTYPE_TXT: {
             std::string txt {""};
-            parse_dns_name_field(bytes, packet_offset_size, txt, false);
+            parse_dns_string(bytes, packet_offset_size, txt);
             return txt;
         }
         case DNS_QTYPE_RRSIG: {
             // Resource Record Signature (RRSIG)
-            return "rrsig";
+            return parse_dns_answer_rdata_rrsig(bytes, packet_offset_size, rdata_length);
         }
         case DNS_QTYPE_NSEC: {
             // Next Secure (NSEC)
-            return "nsec";
+            return parse_dns_answer_rdata_nsec(bytes, packet_offset_size, rdata_length);
         }
         case DNS_QTYPE_DNSKEY: {
             // DNS Public Key (DNSKEY)
-            uint16_t* flags = (uint16_t*) (bytes + packet_offset_size);     // 2 octets
-            packet_offset_size += sizeof(*flags);
-
-            uint8_t* protocol = (uint8_t*) (bytes + packet_offset_size);    // 1 octet
-            packet_offset_size += sizeof(*protocol);
-
-            uint8_t* algorithm = (uint8_t*) (bytes + packet_offset_size);    // 1 octet
-            packet_offset_size += sizeof(*algorithm);
-
-            // Public Key
-
+            return parse_dns_answer_rdata_dnskey(bytes, packet_offset_size, rdata_length);
         }
         case DNS_QTYPE_DS: {
             // Delegation Signer (DS)
-            return "ds";
+            return parse_dns_answer_rdata_ds(bytes, packet_offset_size, rdata_length);
         }
         default: {
             return "";
@@ -113,6 +103,38 @@ std::string parse_dns_answer_rdata(const u_char* bytes, size_t packet_offset_siz
     }
     return "";
 }
+
+size_t parse_dns_string(const u_char* bytes, size_t packet_offset_size, std::string &name)
+{
+    uint8_t *length_octet;
+    int length;
+    char * char_octet;
+    std::string label;
+
+    for(;;)
+    {
+        label = "";
+        length_octet = (uint8_t*) (bytes + packet_offset_size);
+        length = static_cast<int>(*length_octet);
+        packet_offset_size += sizeof(*length_octet);
+
+        // zero octet
+        if (length == 0)
+            break;
+        
+        // add each character to the label string
+        for (int i = 0; i < length; i++) {
+            char_octet = (char *) (bytes + packet_offset_size); 
+            packet_offset_size += sizeof(*char_octet);
+            label.append(char_octet, 0, sizeof(*char_octet));
+        }
+
+        name.append(label);
+    }
+
+    return packet_offset_size;
+}
+
 
 size_t parse_dns_name_field(const u_char* bytes, size_t packet_offset_size, std::string &name, bool is_pointer_reference) {
     
@@ -221,7 +243,7 @@ size_t parse_dns_answer(const u_char* bytes, size_t packet_offset_size) {
     packet_offset_size += sizeof(*ardlength);
     
     // RDATA
-    std::string ardata = parse_dns_answer_rdata(bytes, packet_offset_size, ntohs(*atype));
+    std::string ardata = parse_dns_answer_rdata(bytes, packet_offset_size, ntohs(*ardlength), ntohs(*atype));
     packet_offset_size += ntohs(*ardlength);
 
     if (ardata == "")
@@ -311,4 +333,134 @@ std::string parse_dns_answer_rdata_mx(const u_char* bytes, size_t packet_offset_
             << exchange << "\"";
 
     return output.str();
+}
+
+std::string parse_dns_answer_rdata_rrsig(const u_char* bytes, size_t packet_offset_size)
+{
+    // https://www.ietf.org/rfc/rfc4034.txt
+    uint16_t* type_covered = (uint16_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*type_covered);
+    std::string type_covered_str = std::to_string( ntohs(*type_covered) );
+
+    uint8_t* algorithm = (uint8_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*algorithm);
+    std::string algorithm_str = std::to_string( *algorithm );
+
+    uint8_t* labels = (uint8_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*labels);
+    std::string labels_str = std::to_string( *labels );
+
+    int32_t * original_ttl = (int32_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*original_ttl);
+    std::string original_ttl_str = std::to_string( ntohl(*original_ttl) );
+
+    int32_t * signature_exp = (int32_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*signature_exp);
+    std::string signature_exp_str = std::to_string( ntohl(*signature_exp) );
+    
+    int32_t * signature_inc = (int32_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*signature_inc);
+    std::string signature_inc_str = std::to_string( ntohl(*signature_inc) );
+
+    uint16_t* key_tag = (uint16_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*key_tag);
+    std::string key_tag_str = std::to_string( ntohs(*key_tag) );
+
+    std::string signer_name;
+    packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, signer_name, 0);
+
+
+    // TODO: signature field - Base64 encoding
+
+
+
+}
+
+
+// TODO: add Public Key - Base64 encoding parse
+std::string parse_dns_answer_rdata_dnskey(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length)
+{
+    std::string output;
+    // https://www.ietf.org/rfc/rfc4034.txt
+    uint16_t* flags = (uint16_t*) (bytes + packet_offset_size);     // 2 octets
+    packet_offset_size += sizeof(*flags);
+    std::string flags_str = std::to_string( ntohs(*flags) );
+
+    uint8_t* protocol = (uint8_t*) (bytes + packet_offset_size);    // 1 octet
+    packet_offset_size += sizeof(*protocol);
+    std::string protocol_str = std::to_string( ntohs(*protocol) );
+
+    uint8_t* algorithm = (uint8_t*) (bytes + packet_offset_size);    // 1 octet
+    packet_offset_size += sizeof(*algorithm);
+    std::string algorithm_str = std::to_string( *algorithm );
+
+    std::ostringstream output;
+    // TODO: why doesn't THIS WORK ????? 
+    // output << "\"" << flags_str << "\"";
+
+    //    << flags_str << " "
+    //    << protocol_str << " "
+    //    << algorithm_str << "\"";
+}
+
+
+std::string parse_dns_answer_rdata_nsec(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length)
+{
+    // https://www.ietf.org/rfc/rfc4034.txt
+    size_t end_of_rdata = packet_offset_size + rdata_length;
+
+    std::string next_domain_name;
+    packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, next_domain_name, 0);
+    
+    std::string type_bit_maps_field;
+    for(;;)
+    {
+        uint8_t* octet = (uint8_t*) (bytes + packet_offset_size);
+        packet_offset_size += sizeof(*octet);
+
+        type_bit_maps_field.append(std::to_string(*octet));
+        type_bit_maps_field.append(" ");
+
+        if (packet_offset_size >= end_of_rdata)
+            break;
+    }
+
+    return "\"" + next_domain_name + type_bit_maps_field + "\"";
+}
+
+
+std::string parse_dns_answer_rdata_ds(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length)
+{
+    // https://www.ietf.org/rfc/rfc4034.txt
+    size_t end_of_rdata = packet_offset_size + rdata_length;
+
+    uint16_t* key_tag = (uint16_t*) (bytes + packet_offset_size);     // 2 octets
+    packet_offset_size += sizeof(*key_tag);
+    std::string key_tag_str = std::to_string( ntohs(*key_tag) );
+
+    uint8_t* algorithm = (uint8_t*) (bytes + packet_offset_size);     // 1 octet
+    packet_offset_size += sizeof(*algorithm);
+    std::string algorithm_str = std::to_string( ntohs(*algorithm) );
+
+    uint8_t* digest_type = (uint8_t*) (bytes + packet_offset_size);     // 1 octet
+    packet_offset_size += sizeof(*digest_type);
+    std::string digest_type_str = std::to_string( ntohs(*digest_type) );
+
+    std::string digest;
+    for(;;)
+    {
+        uint8_t* octet = (uint8_t*) (bytes + packet_offset_size);
+        packet_offset_size += sizeof(*octet);
+
+        // TODO: convert to hex
+        digest.append(std::to_string(*octet));
+        digest.append(" ");
+
+        if (packet_offset_size >= end_of_rdata)
+            break;
+    }
+
+    // TODO: add return output 
+
+    return "";
 }
