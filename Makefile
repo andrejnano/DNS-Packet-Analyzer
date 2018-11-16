@@ -15,11 +15,14 @@ TARNAME = xnanoa00
 # Executable file name
 EXEC = dns-export
 
+# Source c++ files
+SRC_FILES := $(wildcard src/*.cc)
+
 # Optimization level
 OPTIMIZE = -O2
 
 # Compiling flags
-CXXFLAGS = -std=c++14 -Wall
+CXXFLAGS = -std=c++11 -Wall -Wextra -lpcap -lpthread
 
 # -----------------------------
 
@@ -27,18 +30,18 @@ all: build
 
 .PHONY: clean run pack test
 
-build: $(EXEC).cc
-	$(CXX) $(CXXFLAGS) $(EXEC).cc -o $(EXEC)
+build: src/$(EXEC).cc
+	$(CXX) $(CXXFLAGS) $(SRC_FILES) -o $(EXEC)
 
 clean:
 	rm $(TARNAME).tar
 
-# @TODO: add all required files
+# TODO: add all required files
 pack:
-	tar $(TARNAME).tar $(EXEC).cc Makefile
+	tar $(TARNAME).tar $(SRC_FILES) Makefile
 
 run:
 	make -B && ./$(EXEC)
 
 test:
-	make -B && ./$(EXEC)
+	make -B && python3 ./tests/run.py
