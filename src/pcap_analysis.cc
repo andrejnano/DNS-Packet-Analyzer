@@ -32,8 +32,6 @@ void pcap_analysis(u_char* user_argument, const struct pcap_pkthdr* h, const u_c
     // network protocol type
     uint16_t net_type;
 
-    std::cout << "link_type is " << link_type << std::endl;
-
     // L2 | ethernet frame
     if (link_type == LINKTYPE_ETHERNET)
     {
@@ -51,7 +49,6 @@ void pcap_analysis(u_char* user_argument, const struct pcap_pkthdr* h, const u_c
     // L2 | unsupported
     else
     {
-        //debug: std::cerr << "unsupported L2 header: " << link_type << std::endl;
         return;
     }
 

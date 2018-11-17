@@ -1,9 +1,11 @@
 #include <netinet/in.h>
 #include <sstream>
+#include <iomanip>
 
 #include "dns-header.h"
 #include "parse-dns.h"
 #include "statistics.h"
+#include "base64.h"
 
 // globally available statistics storage pointer
 extern std::vector<StatisticEntry> *Statistics;
@@ -21,12 +23,12 @@ void parse_dns(const u_char* bytes, size_t packet_offset_size)
     dnshdr * dns_hdr = (dnshdr*) (bytes + packet_offset_size);
     packet_offset_size += sizeof(dnshdr);
 
-    // ignore/skip non-response DNS messages
+    // ignore/skip non-response DNS messages or corrupted messages
     if (dns_hdr->qr != 1) { return; }
-
-    // ignore/skip invalid DNS messages 
     if (dns_hdr->opcode != 0) { return; }
-
+    if (ntohs(dns_hdr->qcount) != 1) { return; }
+    if (ntohs(dns_hdr->ancount) <= 0) { return; }
+    
     // parse QUESTIONS section
     for (uint16_t qcounter = 0 ; qcounter < ntohs(dns_hdr->qcount) ; qcounter++)
     {
@@ -40,6 +42,79 @@ void parse_dns(const u_char* bytes, size_t packet_offset_size)
     }
 
     /* ignore both AUTHORITY & ADDITIONAL sections */
+}
+
+
+size_t parse_dns_question(const u_char* bytes, size_t packet_offset_size) {
+    
+    // QNAME
+    std::string qname;
+    packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, qname, false);
+
+    // QTYPE
+    uint16_t * qtype = (uint16_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*qtype);
+
+    // QCLASS
+    uint16_t * qclass = (uint16_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*qclass);
+
+    return packet_offset_size;
+}
+
+size_t parse_dns_answer(const u_char* bytes, size_t packet_offset_size) {
+
+    bool is_valid_answer = true;
+
+    // NAME
+    std::string aname;
+    packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, aname, false);
+
+    // TYPE
+    uint16_t * atype = (uint16_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*atype);
+    std::string atype_str = dns_type_to_string(ntohs(*atype));
+    
+
+    if (atype_str == "")
+    {
+        is_valid_answer = false;
+    }
+    
+    // CLASS
+    uint16_t * aclass = (uint16_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*aclass);
+
+    // TTL
+    int32_t * attl = (int32_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*attl);
+
+    // RDLENGTH
+    uint16_t * ardlength = (uint16_t*) (bytes + packet_offset_size);
+    packet_offset_size += sizeof(*ardlength);
+
+    // corrupted packet, invalid rdlength
+    if (ntohs(*ardlength) <= 0) 
+    {
+        return packet_offset_size;
+    }
+
+    // RDATA
+    std::string ardata = parse_dns_answer_rdata(bytes, packet_offset_size, ntohs(*ardlength), ntohs(*atype));
+    packet_offset_size += ntohs(*ardlength);
+
+    if (ardata == "")
+    {
+        is_valid_answer = false;
+    }
+    
+    if (is_valid_answer)
+    {
+        // create new statistic entry
+        log_answer(aname, atype_str, ardata);
+    }
+
+    return packet_offset_size;
 }
 
 std::string parse_dns_answer_rdata(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length, uint16_t type)
@@ -82,19 +157,15 @@ std::string parse_dns_answer_rdata(const u_char* bytes, size_t packet_offset_siz
             return txt;
         }
         case DNS_QTYPE_RRSIG: {
-            // Resource Record Signature (RRSIG)
             return parse_dns_answer_rdata_rrsig(bytes, packet_offset_size, rdata_length);
         }
         case DNS_QTYPE_NSEC: {
-            // Next Secure (NSEC)
             return parse_dns_answer_rdata_nsec(bytes, packet_offset_size, rdata_length);
         }
         case DNS_QTYPE_DNSKEY: {
-            // DNS Public Key (DNSKEY)
             return parse_dns_answer_rdata_dnskey(bytes, packet_offset_size, rdata_length);
         }
         case DNS_QTYPE_DS: {
-            // Delegation Signer (DS)
             return parse_dns_answer_rdata_ds(bytes, packet_offset_size, rdata_length);
         }
         default: {
@@ -195,70 +266,6 @@ size_t parse_dns_name_field(const u_char* bytes, size_t packet_offset_size, std:
     return packet_offset_size;
 }
 
-size_t parse_dns_question(const u_char* bytes, size_t packet_offset_size) {
-    
-    // QNAME
-    std::string qname;
-    packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, qname, false);
-
-    // QTYPE
-    uint16_t * qtype = (uint16_t*) (bytes + packet_offset_size);
-    packet_offset_size += sizeof(*qtype);
-
-    // QCLASS
-    uint16_t * qclass = (uint16_t*) (bytes + packet_offset_size);
-    packet_offset_size += sizeof(*qclass);
-
-    return packet_offset_size;
-}
-
-size_t parse_dns_answer(const u_char* bytes, size_t packet_offset_size) {
-
-    bool is_valid_answer = true;
-
-    // NAME
-    std::string aname;
-    packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, aname, false);
-
-    // TYPE
-    uint16_t * atype = (uint16_t*) (bytes + packet_offset_size);
-    packet_offset_size += sizeof(*atype);
-    std::string atype_str = dns_type_to_string(ntohs(*atype));
-    
-    if (atype_str == "")
-    {
-        is_valid_answer = false;
-    }
-    
-    // CLASS
-    uint16_t * aclass = (uint16_t*) (bytes + packet_offset_size);
-    packet_offset_size += sizeof(*aclass);
-
-    // TTL
-    uint32_t * attl = (uint32_t*) (bytes + packet_offset_size);
-    packet_offset_size += sizeof(*attl);
-
-    // RDLENGTH
-    uint16_t * ardlength = (uint16_t*) (bytes + packet_offset_size);
-    packet_offset_size += sizeof(*ardlength);
-    
-    // RDATA
-    std::string ardata = parse_dns_answer_rdata(bytes, packet_offset_size, ntohs(*ardlength), ntohs(*atype));
-    packet_offset_size += ntohs(*ardlength);
-
-    if (ardata == "")
-    {
-        is_valid_answer = false;
-    }
-    
-    if (is_valid_answer)
-    {
-        // create new statistic entry
-        log_answer(aname, atype_str, ardata);
-    }
-
-    return packet_offset_size;
-}
 
 std::string dns_type_to_string(uint16_t type) {
     switch (type) {
@@ -270,6 +277,10 @@ std::string dns_type_to_string(uint16_t type) {
         case DNS_QTYPE_MX:      return "MX";
         case DNS_QTYPE_AAAA:    return "AAAA";
         case DNS_QTYPE_TXT:     return "TXT";
+        case DNS_QTYPE_RRSIG:   return "RRSIG";
+        case DNS_QTYPE_DNSKEY:  return "DNSKEY";
+        case DNS_QTYPE_NSEC:    return "NSEC";
+        case DNS_QTYPE_DS:      return "DS";
         default:                return "";      // unsupported type
     }
 }
@@ -316,8 +327,8 @@ std::string parse_dns_answer_rdata_soa(const u_char* bytes, size_t packet_offset
     return output.str();
 }
 
-std::string parse_dns_answer_rdata_mx(const u_char* bytes, size_t packet_offset_size) {
-
+std::string parse_dns_answer_rdata_mx(const u_char* bytes, size_t packet_offset_size)
+{
     int16_t * preference = (int16_t*) (bytes + packet_offset_size);
     packet_offset_size += sizeof(*preference);
 
@@ -335,9 +346,10 @@ std::string parse_dns_answer_rdata_mx(const u_char* bytes, size_t packet_offset_
     return output.str();
 }
 
-std::string parse_dns_answer_rdata_rrsig(const u_char* bytes, size_t packet_offset_size)
+std::string parse_dns_answer_rdata_rrsig(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length)
 {
-    // https://www.ietf.org/rfc/rfc4034.txt
+    size_t end_of_rdata = packet_offset_size + rdata_length;
+
     uint16_t* type_covered = (uint16_t*) (bytes + packet_offset_size);
     packet_offset_size += sizeof(*type_covered);
     std::string type_covered_str = std::to_string( ntohs(*type_covered) );
@@ -369,69 +381,80 @@ std::string parse_dns_answer_rdata_rrsig(const u_char* bytes, size_t packet_offs
     std::string signer_name;
     packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, signer_name, 0);
 
+    std::string signature = base64_encode(bytes, end_of_rdata - packet_offset_size);
 
-    // TODO: signature field - Base64 encoding
+    std::ostringstream output;
+    output << "\"" << type_covered_str << " "
+                   << algorithm_str << " "
+                   << labels_str << " "
+                   << original_ttl_str << " "
+                   << signature_exp_str << " "
+                   << signature_inc_str << " "
+                   << key_tag_str << " "
+                   << signer_name << " "
+                   << "( " << signature << " )" << "\"";
 
-
-
+    return output.str();
 }
 
 
-// TODO: add Public Key - Base64 encoding parse
 std::string parse_dns_answer_rdata_dnskey(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length)
 {
-    std::string output;
-    // https://www.ietf.org/rfc/rfc4034.txt
+    size_t end_of_rdata = packet_offset_size + rdata_length;
+    
     uint16_t* flags = (uint16_t*) (bytes + packet_offset_size);     // 2 octets
     packet_offset_size += sizeof(*flags);
     std::string flags_str = std::to_string( ntohs(*flags) );
 
     uint8_t* protocol = (uint8_t*) (bytes + packet_offset_size);    // 1 octet
     packet_offset_size += sizeof(*protocol);
-    std::string protocol_str = std::to_string( ntohs(*protocol) );
+    std::string protocol_str = std::to_string( *protocol );
 
     uint8_t* algorithm = (uint8_t*) (bytes + packet_offset_size);    // 1 octet
     packet_offset_size += sizeof(*algorithm);
     std::string algorithm_str = std::to_string( *algorithm );
 
-    std::ostringstream output;
-    // TODO: why doesn't THIS WORK ????? 
-    // output << "\"" << flags_str << "\"";
+    std::string public_key = base64_encode(bytes, end_of_rdata - packet_offset_size);
 
-    //    << flags_str << " "
-    //    << protocol_str << " "
-    //    << algorithm_str << "\"";
+    std::ostringstream output;
+    output << "\"" << flags_str << " "
+                   << protocol_str << " "
+                   << algorithm_str << " "
+                   << "( " <<  public_key << " )" << "\"";
+
+    return output.str();
 }
 
 
 std::string parse_dns_answer_rdata_nsec(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length)
 {
-    // https://www.ietf.org/rfc/rfc4034.txt
     size_t end_of_rdata = packet_offset_size + rdata_length;
 
     std::string next_domain_name;
     packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, next_domain_name, 0);
     
     std::string type_bit_maps_field;
-    for(;;)
+    
+    while(packet_offset_size < end_of_rdata)
     {
         uint8_t* octet = (uint8_t*) (bytes + packet_offset_size);
         packet_offset_size += sizeof(*octet);
 
         type_bit_maps_field.append(std::to_string(*octet));
         type_bit_maps_field.append(" ");
-
-        if (packet_offset_size >= end_of_rdata)
-            break;
     }
 
-    return "\"" + next_domain_name + type_bit_maps_field + "\"";
+    std::ostringstream output;
+
+    output << "\"" << next_domain_name << " "
+                   << "( " << type_bit_maps_field << ")\"";
+
+    return output.str();
 }
 
 
 std::string parse_dns_answer_rdata_ds(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length)
 {
-    // https://www.ietf.org/rfc/rfc4034.txt
     size_t end_of_rdata = packet_offset_size + rdata_length;
 
     uint16_t* key_tag = (uint16_t*) (bytes + packet_offset_size);     // 2 octets
@@ -440,27 +463,30 @@ std::string parse_dns_answer_rdata_ds(const u_char* bytes, size_t packet_offset_
 
     uint8_t* algorithm = (uint8_t*) (bytes + packet_offset_size);     // 1 octet
     packet_offset_size += sizeof(*algorithm);
-    std::string algorithm_str = std::to_string( ntohs(*algorithm) );
+    std::string algorithm_str = std::to_string( *algorithm );
 
     uint8_t* digest_type = (uint8_t*) (bytes + packet_offset_size);     // 1 octet
     packet_offset_size += sizeof(*digest_type);
-    std::string digest_type_str = std::to_string( ntohs(*digest_type) );
+    std::string digest_type_str = std::to_string( *digest_type );
 
     std::string digest;
-    for(;;)
+
+    while(packet_offset_size < end_of_rdata)
     {
         uint8_t* octet = (uint8_t*) (bytes + packet_offset_size);
         packet_offset_size += sizeof(*octet);
-
-        // TODO: convert to hex
-        digest.append(std::to_string(*octet));
-        digest.append(" ");
-
-        if (packet_offset_size >= end_of_rdata)
-            break;
+        
+        std::stringstream hexvalue;
+        hexvalue << std::hex << (int) *octet;
+        digest.append(hexvalue.str());
     }
 
-    // TODO: add return output 
+    std::ostringstream output;
 
-    return "";
+    output << "\"" << key_tag_str << " "
+                   << algorithm_str << " "
+                   << digest_type_str << " "
+                   << "( " << digest << " )\"";
+    return output.str();
+    
 }

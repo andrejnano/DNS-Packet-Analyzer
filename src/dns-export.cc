@@ -21,6 +21,7 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <sstream>
 
 // networking libraries
 #include <sys/socket.h>
@@ -49,6 +50,7 @@ using std::string;
 #include "config.h"
 #include "pcap_analysis.h"
 #include "statistics.h"
+#include "syslogger.h"
 
 #ifndef PCAP_ERRBUF_SIZE
 #define PCAP_ERRBUF_SIZE 256
@@ -64,7 +66,7 @@ extern int optind, opterr, optopt;
 // all current statistics will be stored in this vector
 std::vector<StatisticEntry> *Statistics;
 
-void timer(int timer_time);
+void timer(int timer_time, std::string syslog_server);
 void sigusr_handler(int signum);
 void interrupt_handler(int signum);
 
@@ -114,7 +116,7 @@ int main(int argc, char **argv)
 
         // setup timer
         auto timer_time = config->isTimeSet() ? std::stoi(config->getTime()) : 60;
-        std::thread timer_thread(timer, timer_time);
+        std::thread timer_thread(timer, timer_time, config->getSyslog());
 
         // get the link-layer header type for the live capture
         int link_type = pcap_datalink(pcap_handle);
@@ -152,9 +154,25 @@ int main(int argc, char **argv)
         }
 
         pcap_close(pcap_handle);
+        
+        // connect to the syslog server and dispatch logs
+        std::unique_ptr<SysLogger> syslogger (new SysLogger(config->getSyslog()));
+        if(syslogger)
+        {
+            std::vector<StatisticEntry>::iterator it = Statistics->begin();
+            while(it != Statistics->end())
+            {
+                std::ostringstream output;
+                output << it->get_domain_name() << " " 
+                        << it->get_rr_type() << " "
+                        << it->get_rr_answer() << " "
+                        << it->get_count();
+                
+                syslogger->dispatch(output.str());
+                it++;
+            }
+        }
     }
-
-    print_statistics();
     return EXIT_SUCCESS;
 }
 
@@ -166,8 +184,6 @@ int main(int argc, char **argv)
  */
 void interrupt_handler(int signum)
 {
-    cout << "\n\n[!!!] Caught signal(" << signum << "). Ending the program." << endl;
-    print_statistics();
     exit(EXIT_SUCCESS);
 }
 
@@ -182,15 +198,30 @@ void sigusr_handler(int signum)
     print_statistics();
 }
 
-void timer(int timer_time)
+void timer(int timer_time, std::string syslog_server)
 {
+    std::unique_ptr<SysLogger> syslogger (new SysLogger(syslog_server));
     if (timer_time > 0)
     {
         for(;;)
         {   
             // send statistics to the syslog server in consistent intervals
             std::this_thread::sleep_for (std::chrono::seconds(timer_time));
-            print_statistics();
+            if(syslogger)
+            {
+                std::vector<StatisticEntry>::iterator it = Statistics->begin();
+                while(it != Statistics->end())
+                {
+                    std::ostringstream output;
+                    output << it->get_domain_name() << " " 
+                            << it->get_rr_type() << " "
+                            << it->get_rr_answer() << " "
+                            << it->get_count();
+                    
+                    syslogger->dispatch(output.str());
+                    it++;
+                }
+            }
         }
     }
 }
