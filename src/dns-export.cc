@@ -21,6 +21,8 @@
 #include <thread>
 #include <chrono>
 #include <sstream>
+#include <signal.h>
+
 
 // networking libraries
 #include <sys/socket.h>
@@ -158,7 +160,7 @@ int main(int argc, char **argv)
         if (config->isSyslogSet())
         {
         // connect to the syslog server and dispatch logs
-            std::unique_ptr<SysLogger> syslogger (new SysLogger(config->getSyslog()));
+            SysLogger* syslogger = new SysLogger(config->getSyslog());
             if(syslogger)
             {
                 std::vector<StatisticEntry>::iterator it = Statistics->begin();
@@ -175,6 +177,7 @@ int main(int argc, char **argv)
                     syslogger->dispatch(output.str());
                     it++;
                 }
+		delete syslogger;
             }
         }
         else 
@@ -194,6 +197,7 @@ int main(int argc, char **argv)
  */
 void interrupt_handler(int signum)
 {
+    (void)signum;
     exit(EXIT_SUCCESS);
 }
 
@@ -205,6 +209,7 @@ void interrupt_handler(int signum)
  */
 void sigusr_handler(int signum)
 {
+    (void)signum;
     print_statistics();
 }
 
@@ -217,7 +222,7 @@ void sigusr_handler(int signum)
 void log_timer(int timer_time, std::string syslog_server)
 {   
     // construct new syslogger
-    std::unique_ptr<SysLogger> syslogger (new SysLogger(syslog_server));
+    SysLogger* syslogger = new SysLogger(syslog_server);
     if (timer_time > 0)
     {
         for(;;)
@@ -241,4 +246,5 @@ void log_timer(int timer_time, std::string syslog_server)
             }
         }
     }
+    delete syslogger;
 }

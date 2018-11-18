@@ -8,6 +8,8 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <time.h>
+#include <string.h>
+
 
 #define PORT 514        // SYSLOG DEFAULT 
 

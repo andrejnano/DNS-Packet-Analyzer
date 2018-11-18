@@ -15,7 +15,7 @@
 #include "misc.h"
 #include "dns-header.h"
 
-
+/*
 void print_filler() {
     std::cout << "|" << std::setfill(' ') << std::setw(48);
 }
@@ -114,3 +114,5 @@ void debug_print_dns(size_t packet_offset_size, dnshdr * dns_hdr) {
     std::cout << "[nscount: " << MAGENTA << BOLD << ntohs(dns_hdr->nscount) << RESET << "] ";
     std::cout << "[adcount: " << MAGENTA << BOLD << ntohs(dns_hdr->adcount) << RESET << "]" << std::endl;
 }
+*/
+

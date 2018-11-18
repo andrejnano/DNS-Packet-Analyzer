@@ -31,7 +31,7 @@ all: build
 .PHONY: clean run pack test
 
 build: src/$(EXEC).cc
-	$(CXX) $(CXXFLAGS) $(SRC_FILES) -o $(EXEC)
+	g++ $(CXXFLAGS) $(SRC_FILES) -o $(EXEC)
 
 clean:
 	rm $(TARNAME).tar
