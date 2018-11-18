@@ -7,6 +7,7 @@
 #include "statistics.h"
 #include "base64.h"
 
+
 // globally available statistics storage pointer
 extern std::vector<StatisticEntry> *Statistics;
 

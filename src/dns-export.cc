@@ -64,6 +64,7 @@ extern int optind, opterr, optopt;
 
 // all current statistics will be stored in this vector
 std::vector<StatisticEntry> *Statistics;
+std::string executable;
 
 void log_timer(int timer_time, std::string syslog_server);
 void sigusr_handler(int signum);
@@ -85,6 +86,9 @@ int main(int argc, char **argv)
     // parse arguments into a configuration of runtime
     auto config = parseArguments(argc, argv);
     if (!config) { return EXIT_FAILURE; }
+
+    // assign the executable name
+    executable = argv[0];
 
     // error buffer and pcap stream handle
     char errbuf[PCAP_ERRBUF_SIZE];
@@ -172,7 +176,7 @@ int main(int argc, char **argv)
                             << it->get_count();
                     
                     // send it to the syslog server
-                    syslogger->dispatch(output.str());
+                    syslogger->dispatch(output.str(), executable, ::getpid());
                     it++;
                 }
             }
@@ -235,7 +239,7 @@ void log_timer(int timer_time, std::string syslog_server)
                             << it->get_rr_answer() << " "
                             << it->get_count();
                     
-                    syslogger->dispatch(output.str());
+                    syslogger->dispatch(output.str(), executable, ::getppid());
                     it++;
                 }
             }

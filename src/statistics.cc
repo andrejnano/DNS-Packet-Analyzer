@@ -4,6 +4,13 @@
 
 extern std::vector<StatisticEntry> *Statistics;
 
+/**
+ * @brief store new statistic inside the statitistics vector
+ * 
+ * @param domain_name domain name from the DNS query
+ * @param rr_type type of the DNS msg
+ * @param rr_answer DNS response data
+ */
 void log_answer(std::string domain_name, std::string rr_type, std::string rr_answer)
 {
     // search for the entry, if it already exists
@@ -25,7 +32,8 @@ void log_answer(std::string domain_name, std::string rr_type, std::string rr_ans
 }
 
 
-void print_statistics() {
+void print_statistics()
+{
     
     if (Statistics)
     {
@@ -41,7 +49,8 @@ void print_statistics() {
     }
 }
 
-std::string return_statistics() {
+std::string return_statistics()
+{
 
     std::ostringstream output;
     if (Statistics)

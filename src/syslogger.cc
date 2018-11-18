@@ -100,10 +100,10 @@ SysLogger::~SysLogger()
     close(this->socket_fd);
 }
 
-void SysLogger::dispatch(std::string message)
+void SysLogger::dispatch(std::string message, std::string executable, pid_t pid)
 {
-
-    message = syslog_format(message);
+    // prepare message according to the Syslog RFC
+    message = syslog_format(message, executable, pid);
 
     switch(this->server_address_family)
     {
@@ -134,7 +134,7 @@ void SysLogger::dispatch(std::string message)
 
 }
 
-std::string SysLogger::syslog_format(std::string raw_message)
+std::string SysLogger::syslog_format(std::string raw_message, std::string executable, pid_t pid)
 {
     std::ostringstream output;
     const int facility = 16;    // local0
@@ -162,6 +162,7 @@ std::string SysLogger::syslog_format(std::string raw_message)
             << version << " "
             << timestamp << "." << std::setfill('0') << std::setw(3) << ms << "Z "
             << hostname << " "
+            << executable << " "
             << "- - - " << raw_message;
 
     return output.str();
