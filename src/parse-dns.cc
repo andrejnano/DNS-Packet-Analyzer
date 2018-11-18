@@ -477,7 +477,7 @@ std::string parse_dns_answer_rdata_ds(const u_char* bytes, size_t packet_offset_
         packet_offset_size += sizeof(*octet);
         
         std::stringstream hexvalue;
-        hexvalue << std::hex << (int) *octet;
+        hexvalue << std::hex << (int) *octet << std::dec;
         digest.append(hexvalue.str());
     }
 

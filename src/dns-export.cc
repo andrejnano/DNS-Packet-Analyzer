@@ -9,7 +9,6 @@
  *  @section Description
  *  
  *  Cílem projektu je vytvořit aplikaci, která bude umět zpracovávat data protokolu DNS (Domain Name System) a vybrané statistiky exportovat pomocí protokolu Syslog na centrální logovací server. 
- *  TODO: remove unnecessary libraries
  */
 
 // std libraries 
@@ -40,7 +39,7 @@
 #include <pcap/pcap.h>
 #endif
 
-// commonly used std objects.. really no need to be careful about poluting namespace
+// commonly used std objects.. no need to be careful about poluting namespace
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -66,7 +65,7 @@ extern int optind, opterr, optopt;
 // all current statistics will be stored in this vector
 std::vector<StatisticEntry> *Statistics;
 
-void timer(int timer_time, std::string syslog_server);
+void log_timer(int timer_time, std::string syslog_server);
 void sigusr_handler(int signum);
 void interrupt_handler(int signum);
 
@@ -116,7 +115,7 @@ int main(int argc, char **argv)
 
         // setup timer
         auto timer_time = config->isTimeSet() ? std::stoi(config->getTime()) : 60;
-        std::thread timer_thread(timer, timer_time, config->getSyslog());
+        std::thread timer_thread(log_timer, timer_time, config->getSyslog());
 
         // get the link-layer header type for the live capture
         int link_type = pcap_datalink(pcap_handle);
@@ -131,20 +130,20 @@ int main(int argc, char **argv)
         pcap_close(pcap_handle);
     }
     // offline pcap sniffing from the specified file
-    else if (config->isPcapSet()) {
-
+    else if (config->isPcapSet())
+    {
         // open the pcap stream from the file and assign to the handle
         if ( (pcap_handle = pcap_open_offline(config->getPcap().c_str(), errbuf)) == NULL)
         {
             std::cerr << "error opening the pcap file" << std::endl;
             return EXIT_FAILURE;
         }
+        
+        // get the link-layer header type for the ``savefile``
+        uint16_t link_type = pcap_datalink(pcap_handle);
 
         // init the statistics storage vector
         Statistics = new std::vector<StatisticEntry>;
-        
-        // get the link-layer header type for the ``savefile'
-        uint16_t link_type = pcap_datalink(pcap_handle);
 
         // analyze packets returned by the handle
         if (pcap_loop(pcap_handle, -1, pcap_analysis, reinterpret_cast<u_char*>(&link_type)) != 0)
@@ -153,25 +152,36 @@ int main(int argc, char **argv)
             return EXIT_FAILURE;
         }
 
+        // close the handle when finished
         pcap_close(pcap_handle);
         
-        // connect to the syslog server and dispatch logs
-        std::unique_ptr<SysLogger> syslogger (new SysLogger(config->getSyslog()));
-        if(syslogger)
+        if (config->isSyslogSet())
         {
-            std::vector<StatisticEntry>::iterator it = Statistics->begin();
-            while(it != Statistics->end())
+        // connect to the syslog server and dispatch logs
+            std::unique_ptr<SysLogger> syslogger (new SysLogger(config->getSyslog()));
+            if(syslogger)
             {
-                std::ostringstream output;
-                output << it->get_domain_name() << " " 
-                        << it->get_rr_type() << " "
-                        << it->get_rr_answer() << " "
-                        << it->get_count();
-                
-                syslogger->dispatch(output.str());
-                it++;
+                std::vector<StatisticEntry>::iterator it = Statistics->begin();
+                while(it != Statistics->end())
+                {
+                    // construct a single message
+                    std::ostringstream output;
+                    output  << it->get_domain_name()    << " " 
+                            << it->get_rr_type()        << " "
+                            << it->get_rr_answer()      << " "
+                            << it->get_count();
+                    
+                    // send it to the syslog server
+                    syslogger->dispatch(output.str());
+                    it++;
+                }
             }
         }
+        else 
+        {
+            print_statistics();
+        }
+        
     }
     return EXIT_SUCCESS;
 }
@@ -198,8 +208,15 @@ void sigusr_handler(int signum)
     print_statistics();
 }
 
-void timer(int timer_time, std::string syslog_server)
-{
+/**
+ *  @brief Send messages to syslog server in timed intervals
+ * 
+ *  @param timer_time value of each interval in seconds
+ *  @param syslog_server name of the syslog server (hostname/ipv4/ipv6)
+ */
+void log_timer(int timer_time, std::string syslog_server)
+{   
+    // construct new syslogger
     std::unique_ptr<SysLogger> syslogger (new SysLogger(syslog_server));
     if (timer_time > 0)
     {

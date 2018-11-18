@@ -18,8 +18,8 @@ class SysLogger {
     public:
         SysLogger(std::string syslog_server);
         ~SysLogger();
-
         void dispatch(std::string message);
+        std::string syslog_format(std::string raw_message);
 };
 
 

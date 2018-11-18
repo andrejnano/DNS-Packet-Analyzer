@@ -1,12 +1,15 @@
 #include "syslogger.h"
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 #include <string>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <time.h>
 
-#define PORT 514
+#define PORT 514        // SYSLOG DEFAULT 
 
 // TODO: REFACTOR THIS :)
 
@@ -64,7 +67,7 @@ SysLogger::SysLogger(std::string syslog_server)
             this->server_address_ipv4.sin_family = this->server_address_family;
             this->server_address_ipv4.sin_port = htons(PORT);
 
-            // create socket
+            // create UDP socket
             this->socket_fd = socket(this->server_address_family, SOCK_DGRAM, IPPROTO_UDP);
             if (socket_fd <= 0)
             {
@@ -100,11 +103,13 @@ SysLogger::~SysLogger()
 void SysLogger::dispatch(std::string message)
 {
 
+    message = syslog_format(message);
+
     switch(this->server_address_family)
     {
         case AF_INET:
         {
-            int rv = sendto( this->socket_fd, 
+            sendto( this->socket_fd, 
                     message.c_str(), 
                     message.length(), 
                     0,
@@ -127,4 +132,37 @@ void SysLogger::dispatch(std::string message)
             exit(1);
     }
 
+}
+
+std::string SysLogger::syslog_format(std::string raw_message)
+{
+    std::ostringstream output;
+    const int facility = 16;    // local0
+    const int severity =  6;    // Informational
+    int priority = facility * 8 + severity;
+    const int version = 1;
+    
+    time_t now = time(NULL);
+    struct tm ts;
+    char timestamp[80];
+    ts = *localtime(&now);
+    //strftime(timestamp, sizeof(timestamp), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
+    strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%S", &ts);
+    uint16_t ms = ts.tm_sec % 1000;
+    // timeval now;
+    // gettimeofday(&now, NULL);
+    // uint16_t ms = now.tv_usec / 1000;
+    // char timestamp[80];
+    // strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%S")
+
+    char hostname[255];
+    gethostname(hostname, 255);
+
+    output  << "<" << priority  << ">"
+            << version << " "
+            << timestamp << "." << std::setfill('0') << std::setw(3) << ms << "Z "
+            << hostname << " "
+            << "- - - " << raw_message;
+
+    return output.str();
 }
