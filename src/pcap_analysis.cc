@@ -22,6 +22,7 @@
 
 void pcap_analysis(u_char* user_argument, const struct pcap_pkthdr* h, const u_char* bytes)
 {
+    (void)h;
     // cursor to the current offset from the beginning of the whole packet
     size_t packet_offset_size = 0;
     
@@ -71,7 +72,11 @@ void pcap_analysis(u_char* user_argument, const struct pcap_pkthdr* h, const u_c
         else if (transport_protocol == IPPROTO_TCP)
         {
             const struct tcphdr* tcp_hdr = (struct tcphdr *) (bytes + packet_offset_size);
-            packet_offset_size += tcp_hdr->th_off * 4;  // tcp header size
+            #if (defined(__FAVOR_BSD))
+		packet_offset_size += tcp_hdr->th_off * 4;  // tcp header size
+	    #else
+		packet_offset_size += tcp_hdr->doff * 4;
+	    #endif
             packet_offset_size += 2; // skip the 2 byte prefix (dns message length) in TCP/DNS message
         }
         // L4 | Other / Not supported
@@ -100,7 +105,11 @@ void pcap_analysis(u_char* user_argument, const struct pcap_pkthdr* h, const u_c
         else if (transport_protocol == IPPROTO_TCP)
         {
             const struct tcphdr* tcp_hdr = (struct tcphdr *) (bytes + packet_offset_size);
-            packet_offset_size += tcp_hdr->th_off * 4;  // tcp header size
+            #if (defined(__FAVOR_BSD))
+		packet_offset_size += tcp_hdr->th_off * 4;  // tcp header size
+	    #else
+		packet_offset_size += tcp_hdr->doff * 4;
+	    #endif
             packet_offset_size += 2; // skip the 2 byte prefix (dns message length) in TCP/DNS message
         }
         // L4 | Other / Not Supported
