@@ -1,0 +1,51 @@
+\section{Design}
+
+\subsection{Description/About}
+
+
+
+\subsection{Requirements}
+% Please add the following required packages to your document preamble:
+% \usepackage{booktabs}
+% \begin{table}[]
+% \begin{tabular}{@{}ll@{}}
+% \toprule
+% \multicolumn{1}{l|}{REQ\_01\_01a} & \multicolumn{1}{l|}{Application will parse relevant link layer protocols (Ethernet, Linux SLL)} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_01\_01b} & \multicolumn{1}{l|}{Application will skip other link layer protocol types.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_01\_02a} & \multicolumn{1}{l|}{Application will parse relevant network layer protocols (IPv4, IPv6)} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_01\_02b} & \multicolumn{1}{l|}{Application will skip other network layer protocol types.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_01\_03a} & \multicolumn{1}{l|}{Application will parse relevant transport layer protocols (UDP, TCP)} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_01\_03b} & \multicolumn{1}{l|}{Application will skip other transport layer protocol types.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_01\_04a} & \multicolumn{1}{l|}{Application will parse just DNS protocol on the application layer.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_01\_04b} & \multicolumn{1}{l|}{Application will skip other application protocol types.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_01\_05a} & \multicolumn{1}{l|}{Application will parse A, AAAA, CNAME, MX, NS, SOA, TXT, SPF, DNSKEY, NSEC, RRSIG and DS record types} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_01\_05b} & \multicolumn{1}{l|}{Application will skip other record types.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_02} & \multicolumn{1}{l|}{Application will collect statistics about selected DNS messages.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_02\_01} & \multicolumn{1}{l|}{Statistics will take this form: domain-name rr-type rr-answer count} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_03} & \multicolumn{1}{l|}{Application will export statistics to a specified syslog server.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_04} & \multicolumn{1}{l|}{Application will be run as a executable in CentOS environment from the command line} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_05} & \multicolumn{1}{l|}{Application must accept arguments {[}-r file.pcap{]} {[}-i interface{]} {[}-s syslog-server{]} {[}-t seconds{]}} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_05\_01} & \multicolumn{1}{l|}{Application accepts -h argument for help} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06} & \multicolumn{1}{l|}{Application will act accordingly to specified arguments} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06\_01} & \multicolumn{1}{l|}{If interface argument is set, application will listen on a network interface.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06\_01\_01} & \multicolumn{1}{l|}{If syslog-server argument is also set, application will export statistics in regular intervals.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06\_01\_01a} & \multicolumn{1}{l|}{If seconds argument is also set, interval of statistics exporting is defined by this argument.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06\_01\_01b} & \multicolumn{1}{l|}{If seconds argument is not set, interval of statistics exporting is implicitly 60 seconds.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06\_01\_02} & \multicolumn{1}{l|}{If syslog-server argument is not set, application will ???? TODO} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06\_02} & \multicolumn{1}{l|}{If file argument is set, application will read from a static .pcap file.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06\_02\_01} & \multicolumn{1}{l|}{Application should accept only .pcap files, or return error when pcap analysis doesn't accept the file.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06\_02\_02} & \multicolumn{1}{l|}{If syslog-server argument is also set, application will export statistics at the end of analysis.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06\_02\_03} & \multicolumn{1}{l|}{If syslog-server argument is not set, application will print out statistics to the standard output at the end of analysis.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06\_03} & \multicolumn{1}{l|}{Combination of interface and file arguments is forbidden.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_06\_03} & \multicolumn{1}{l|}{Combination of file and seconds arguments is forbidden.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_07} & \multicolumn{1}{l|}{Application will handle SIGUSR1 signal and print statistics to the standard output.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_08} & \multicolumn{1}{l|}{Application will handle SIGINT signal and exit.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_09} & \multicolumn{1}{l|}{Application will create syslog messages from collected statistics.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_09\_01} & \multicolumn{1}{l|}{Syslog messages will be constructed with syntax according to RFC 5424} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_09\_02} & \multicolumn{1}{l|}{Required fields are: timestamp, hostname, priority, version, executable name and the actual message data} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_09\_03} & \multicolumn{1}{l|}{Facility must be set to local0.} \\ \cmidrule(l){2-2} 
+% \multicolumn{1}{l|}{REQ\_09\_04} & \multicolumn{1}{l|}{Severity must be set to Informational.} \\ \cmidrule(l){2-2}
+% \end{tabular}
+% \end{table}
+\subsection{Solution}
+

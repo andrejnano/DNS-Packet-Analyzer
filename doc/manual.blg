@@ -1,0 +1,9 @@
+[0] Config.pm:343> INFO - This is Biber 2.5
+[1] Config.pm:346> INFO - Logfile is 'manual.blg'
+[50] biber-darwin:290> INFO - === Mon Nov 19, 2018, 16:37:13
+[72] Biber.pm:351> INFO - Reading 'manual.bcf'
+[175] Biber.pm:773> INFO - Using all citekeys in bib section 0
+[188] Biber.pm:3493> INFO - Processing section 0
+[204] Biber.pm:3657> INFO - Looking for bibtex format file 'publications.bib' for section 0
+[332] Utils.pm:165> ERROR - Cannot find 'publications.bib'!
+[333] Biber.pm:112> INFO - ERRORS: 1

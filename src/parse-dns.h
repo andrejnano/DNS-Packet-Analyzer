@@ -87,7 +87,6 @@
 
     std::string parse_dns_answer_rdata_soa(const u_char* bytes, int32_t packet_offset_size);
     std::string parse_dns_answer_rdata_mx(const u_char* bytes, int32_t packet_offset_size);
-
     // DNSSEC 
     std::string parse_dns_answer_rdata_rrsig(const u_char* bytes, int32_t packet_offset_size, uint16_t rdata_length);
     std::string parse_dns_answer_rdata_dnskey(const u_char* bytes, int32_t packet_offset_size, uint16_t rdata_length);

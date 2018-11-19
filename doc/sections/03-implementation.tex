@@ -1,0 +1,163 @@
+
+\section{Implementation}
+
+\subsection{Project structure}
+
+\dirtree{%
+.1 \faFolderOpen \hspace{1pt} /.
+.2 \faFolderOpen \hspace{1pt} src/.
+.3 \faFile \hspace{1pt} base64.h.
+.3 \faFile \hspace{1pt} config.h.
+.3 \faFile \hspace{1pt} dns-header.h.
+.3 \faFile \hspace{1pt} misc.h.
+.3 \faFile \hspace{1pt} parse-dns.h.
+.3 \faFile \hspace{1pt} pcap-analysis.h.
+.3 \faFile \hspace{1pt} satistics.h.
+.3 \faFile \hspace{1pt} syslogger.h.
+.3 \faFileCodeO \hspace{1pt} base64.cc.
+.3 \faFileCodeO \hspace{1pt} config.cc.
+.3 \faFileCodeO \hspace{1pt} dns-export.cc.
+.3 \faFileCodeO \hspace{1pt} parse-dns.cc.
+.3 \faFileCodeO \hspace{1pt} pcap-analysis.cc.
+.3 \faFileCodeO \hspace{1pt} satistics.cc.
+.3 \faFileCodeO \hspace{1pt} syslogger.cc.
+.2 \faFileTextO \hspace{1pt} dns-export.1.
+.2 \faCogs \hspace{1pt} Makefile.
+.2 \faFilePdfO \hspace{1pt} manual.pdf.
+}
+
+\subsection{Important sections of the code}
+
+Since the primary objective of this project is to process DNS packets, the following functions are the backbone of the whole processing aspect of this application.
+
+\vspace{1cm}
+\textbf{Packet processing loop} \textit{(/src/dns-export.cc)}
+\begin{lstlisting}[language=C++] 
+    // analyze packets returned by the handle
+    if (pcap_loop(pcap_handle, -1, pcap_analysis, reinterpret_cast<u_char*>(&link_type)) != 0)
+    {
+        std::cerr << "packet reading failed" << std::endl;
+        return EXIT_FAILURE;
+    }
+\end{lstlisting}
+
+\vspace{1cm}
+\textbf{Parsing of the DNS frame the application layer} \textit{(/src/parse-dns.h)}
+\begin{lstlisting}[language=C++] 
+   
+    /**
+     *  @brief Parse DNS frame of the packet
+     * 
+     *  @param bytes pointer to the packet
+     *  @param packet_offset_size current offset in the packet
+     */
+    void parse_dns(const u_char* bytes, int32_t packet_offset_size);
+
+\end{lstlisting}
+
+\pagebreak
+
+\vspace{1cm}
+\textbf{Parsing of DNS Questions \& Answers sections} \textit{(/src/parse-dns.h)}
+\begin{lstlisting}[language=C++] 
+    /**
+     *  @brief Parse a Question in the Questions section on the DNS frame of the packet
+     * 
+     *  @param bytes pointer to the packet
+     *  @param packet_offset_size current offset in the packet
+     */
+    size_t parse_dns_question(const u_char* bytes, int32_t packet_offset_size);
+
+    /**
+     *  @brief Parse an Answer in the Answers section in the DNS frame of the packet
+     * 
+     *  @param bytes pointer to the packet
+     *  @param packet_offset_size current offset in the packet
+     */
+    int32_t parse_dns_answer(const u_char* bytes, int32_t packet_offset_size);
+\end{lstlisting}
+
+\vspace{1cm}
+\textbf{Parsing of RDATA field in DNS Answers section} \textit{(/src/parse-dns.h)}
+\begin{lstlisting}[language=C++] 
+    /**
+     *  @brief Parse the Record Data field in the DNS frame 
+     * 
+     *  @param bytes pointer to the packet
+     *  @param packet_offset_size current offset in the packet
+     *  @param type DNS RR type 
+     *  
+     *  @return parsed RDATA
+     */
+    std::string parse_dns_answer_rdata( const u_char* bytes, int32_t packet_offset_size, uint16_t rdata_length, uint16_t type);
+\end{lstlisting}
+
+\vspace{1cm}
+\textbf{Parsing of the domain-name type of fields} \textit{(/src/parse-dns.h)}
+\begin{lstlisting}[language=C++]
+    /**
+     *  @brief Parse the label/ptr name field in the DNS frame
+     * 
+     *  @param bytes pointer to the packet
+     *  @param packet_offset_size current offset in the packet
+     *  @param name string to which the parsed content will be stored
+     *  @param is_pointer_reference flag describing the context in which the name parsing is run
+     *  @param depth of the recursive pointer call
+     * 
+     *  @return updated packet_offset_size
+     */
+    int32_t parse_dns_name_field(const u_char* bytes, 
+                                int32_t packet_offset_size, 
+                                std::string &name, 
+                                bool is_pointer_reference,
+                                uint8_t depth = 0);
+\end{lstlisting}
+
+\vspace{1cm}
+\textbf{Parsing of the character-string type of fields} \textit{(/src/parse-dns.h)}
+\begin{lstlisting}[language=C++]
+    /**
+     *  @brief Parse one or more <character-string>s and save them into a string
+     * 
+     *  @param bytes pointer to the packet
+     *  @param packet_offset_size current offset in the packet
+     *  @param name string to which the parsed content will be stored
+     * 
+     *  @return updated packet_offset_size
+     */
+    size_t parse_dns_string(const u_char* bytes, int32_t packet_offset_size, std::string &name);
+\end{lstlisting}
+
+\subsection{Problematic sections}
+
+\subsection{Runtime flow structure}
+
+\begin{enumerate}
+\item declarations, signals, globals setup
+\item argument parsing
+\item execution mode split
+\begin{enumerate}[label=(\alph*)]
+\item interface sniffing
+\begin{enumerate}
+\item create pcap handle
+\item set options for sniffing
+\item compile \& apply filter ("port 53")
+\item create new thread for regular exporting
+\item start analyzing packets
+\end{enumerate}
+\item offline file reading
+\begin{enumerate}
+\item open the file
+\item start analyzing packets
+\end{enumerate}
+\end{enumerate}
+\item exit
+\end{enumerate}
+
+\subsection{Limitations}
+
+\begin{enumerate}
+\item Application doesn't support TCP fragmentation of packets.
+\item Application doesn't support other link layer types than Ethernet \& Linux SLL
+\item 
+\end{enumerate}

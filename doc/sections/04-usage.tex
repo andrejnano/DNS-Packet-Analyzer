@@ -1,0 +1,58 @@
+
+
+\section{Usage}
+
+\subsection{Execution details}
+
+
+
+\subsection{Examples}
+
+\vspace{0.5cm}
+\textbf{Analyze static file, print statistics to STDOUT}
+\begin{lstlisting}[language=Bash] 
+./dns-export -r example.pcap
+\end{lstlisting}
+
+\vspace{0.5cm}
+\textbf{Analyze static file, export to server defined by a hostname}
+\begin{lstlisting}[language=Bash] 
+./dns-export -r example.pcap -s syslog_sever_domain
+\end{lstlisting}
+
+\vspace{0.5cm}
+\textbf{Analyze static file, export to server defined by IPv4 address}
+\begin{lstlisting}[language=Bash] 
+./dns-export -r example.pcap -s 127.0.0.1
+\end{lstlisting}
+
+\vspace{0.5cm}
+\textbf{Analyze static file, export to server defined by IPv6 address}
+\begin{lstlisting}[language=Bash] 
+./dns-export -r example.pcap -s ::1
+\end{lstlisting}
+
+\vspace{0.5cm}
+\textbf{Analyze live traffic from an interface}
+\begin{lstlisting}[language=Bash] 
+./dns-export -i en0
+\end{lstlisting}
+
+\vspace{0.5cm}
+\textbf{Analyze live traffic from an interface, set timer to 5 seconds}
+\begin{lstlisting}[language=Bash] 
+./dns-export -i en0 -t 5
+\end{lstlisting}
+
+\vspace{0.5cm}
+\textbf{Analyze live traffic from an interface, export to a syslog server defined by a hostname}
+\begin{lstlisting}[language=Bash] 
+./dns-export -i en0 -s syslog_server_domain
+\end{lstlisting}
+
+\vspace{0.5cm}
+\textbf{Analyze live traffic from an interface, export to a syslog server defined by a hostname and set the timer to 5 seconds}
+\begin{lstlisting}[language=Bash] 
+./dns-export -i en0 -s syslog_server_domain -t 5
+\end{lstlisting}
+

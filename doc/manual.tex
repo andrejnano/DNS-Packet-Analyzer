@@ -1,0 +1,117 @@
+% !TEX encoding = UTF-8 Unicode
+\documentclass{report}
+\usepackage[legalpaper, portrait, margin=1in]{geometry}
+
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+
+\title{Exportation of DNS info using Syslog}
+\author{Andrej Naňo - xnanoa00}
+\date{\today}
+
+% big font for sections
+\usepackage{sectsty}
+\sectionfont{\LARGE}
+
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{dirtree}
+\usepackage{fontawesome}
+% \usepackage{minted}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{booktabs}
+\usepackage{enumitem}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Bash,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=4
+}
+
+% \begin{comment} ... \end{comment{}
+\usepackage{verbatim}
+
+\setlength{\parskip}{0pt}
+
+\makeatletter
+\renewcommand{\paragraph}{
+  \@startsection{paragraph}{4}
+    {\z@}{1.25ex \@plus 1ex \@minus .2ex}{-1em}
+      {\normalfont\normalsize\bfseries}
+      }
+      \makeatother
+
+% Subtract 1 from counters that are used
+\renewcommand{\thesection}{\thechapter.\number\numexpr\value{section}-1\relax}
+\renewcommand{\thesubsection}{\thesection.\number\numexpr\value{subsection}-1\relax}
+\renewcommand{\thesubsubsection}{\thesubsection.\number\numexpr\value{subsubsection}-1\relax}
+\setcounter{secnumdepth}{3}
+
+\setcounter{chapter}{1}% Not using chapters, but they're used in the counters
+
+\usepackage[
+	sorting=none,
+	minbibnames=8,
+	maxbibnames=9,
+	block=space,
+	backend=biber
+]{biblatex}
+\bibliography{publications}
+
+\usepackage{parskip}
+
+\usepackage{lipsum}
+
+%============================== TITLE PAGE ====================================
+
+\begin{document}
+
+\newpage
+\maketitle
+\newpage
+
+%=========================== TABLE OF CONTENT =================================
+
+\renewcommand{\contentsname}{Table of Content}
+\tableofcontents
+
+%=============================== CONTENT ======================================
+
+\include{sections/01-introduction}
+\include{sections/02-design}
+\include{sections/03-implementation}
+\include{sections/04-usage}
+\include{sections/05-acknowledgments}
+
+%============================= BIBLIOGRAPHY ====================================
+
+\section{Sources}
+\label{bib}
+
+% \nocite is used to display all references from publications.bib -- even
+% if they were not cited. 
+\nocite{*}
+
+\printbibliography[heading=none]
+
+\end{document}

@@ -49,7 +49,7 @@ using std::string;
 
 // project header files
 #include "config.h"
-#include "pcap_analysis.h"
+#include "pcap-analysis.h"
 #include "statistics.h"
 #include "syslogger.h"
 
