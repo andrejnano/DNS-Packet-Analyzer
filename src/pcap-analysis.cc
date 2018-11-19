@@ -119,7 +119,7 @@ void pcap_analysis(u_char* user_argument, const struct pcap_pkthdr* h, const u_c
 
 
     /*-----------------------------------------------------------------------*/
-    /*                               L5                                      */
+    /*                               L7                                      */
     /*-----------------------------------------------------------------------*/
 
     parse_dns(bytes, packet_offset_size);
