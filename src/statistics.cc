@@ -1,3 +1,15 @@
+/**
+ *  @file       statistics.cc
+ *  @author     Andrej Nano (xnanoa00)
+ *  @date       2018-11-19
+ *  @version    1.0
+ * 
+ *  @brief  DNS protocol information export using the Syslog protocol | ISA 2018/19 (Export DNS informací pomocí protokolu Syslog)
+ *  
+ *  @section Description
+ *  This program creates statistics about DNS communication and exports them to a syslog server.
+ */
+
 #include <iostream>
 #include <sstream>
 #include "statistics.h"

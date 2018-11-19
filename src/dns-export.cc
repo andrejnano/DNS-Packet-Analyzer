@@ -1,14 +1,13 @@
 /**
  *  @file       dns-export.cc
  *  @author     Andrej Nano (xnanoa00)
- *  @date       2018-10-01
- *  @version    0.1
+ *  @date       2018-11-19
+ *  @version    1.0
  * 
- *  @brief ISA 2018, Export DNS informací pomocí protokolu Syslog
+ *  @brief  DNS protocol information export using the Syslog protocol | ISA 2018/19 (Export DNS informací pomocí protokolu Syslog)
  *  
  *  @section Description
- *  
- *  Cílem projektu je vytvořit aplikaci, která bude umět zpracovávat data protokolu DNS (Domain Name System) a vybrané statistiky exportovat pomocí protokolu Syslog na centrální logovací server. 
+ *  This program creates statistics about DNS communication and exports them to a syslog server.
  */
 
 // std libraries 
@@ -22,7 +21,6 @@
 #include <chrono>
 #include <sstream>
 #include <signal.h>
-
 
 // networking libraries
 #include <sys/socket.h>
@@ -66,6 +64,7 @@ extern int optind, opterr, optopt;
 
 // all current statistics will be stored in this vector
 std::vector<StatisticEntry> *Statistics;
+SysLogger* syslogger;
 std::string executable;
 
 void log_timer(int timer_time, std::string syslog_server);
@@ -122,6 +121,7 @@ int main(int argc, char **argv)
         // setup timer
         auto timer_time = config->isTimeSet() ? std::stoi(config->getTime()) : 60;
         std::thread timer_thread(log_timer, timer_time, config->getSyslog());
+        timer_thread.detach();
 
         // get the link-layer header type for the live capture
         int link_type = pcap_datalink(pcap_handle);
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
         if (config->isSyslogSet())
         {
         // connect to the syslog server and dispatch logs
-            SysLogger* syslogger = new SysLogger(config->getSyslog());
+            syslogger = new SysLogger(config->getSyslog());
             if(syslogger)
             {
                 std::vector<StatisticEntry>::iterator it = Statistics->begin();
@@ -202,14 +202,15 @@ int main(int argc, char **argv)
 void interrupt_handler(int signum)
 {
     (void)signum;
+    delete syslogger;
+    delete Statistics;
     exit(EXIT_SUCCESS);
 }
 
 /**
- *  @brief User signal handler
+ *  @brief User signal handler, prints statistics collected so far to the standard output.
  * 
  *  @param signum number of the signal caught
- *  @return void
  */
 void sigusr_handler(int signum)
 {
@@ -226,11 +227,15 @@ void sigusr_handler(int signum)
 void log_timer(int timer_time, std::string syslog_server)
 {   
     // construct new syslogger
-    SysLogger* syslogger = new SysLogger(syslog_server);
+    if (syslog_server.empty())
+    {
+        return;
+    }
+    syslogger = new SysLogger(syslog_server);
     if (timer_time > 0)
     {
         for(;;)
-        {   
+        {
             // send statistics to the syslog server in consistent intervals
             std::this_thread::sleep_for (std::chrono::seconds(timer_time));
             if(syslogger)

@@ -18,6 +18,7 @@
     #define BG_BLUE     "\033[44m"
     #define RESET       "\033[0m"
     
+    // these are all debug functions, used by me during developement, final version of this program doesn't use them
     void print_filler();
     void print_offset(int32_t packet_offset_size);
     void debug_print_packet_start(const struct pcap_pkthdr* h);

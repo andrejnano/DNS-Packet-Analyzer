@@ -9,17 +9,17 @@ dns-export \- export dns info to syslog server
 [\fB\-t\fR \fIseconds\fR]
 .SH DESCRIPTION
 .B dns-export
-Zpracovava data protokolu DNS (Domain Name System) a vybrane statistiky exportuje pomocou protokolu Syslog na centralni logovaci server. 
+This program creates statistics about DNS communication and exports them to a syslog server.
 .SH OPTIONS
 .TP
 .BR \-r =file.pcap
-Zpracuje zadany pcap soubor.
+Application will process a specified static PCAP file.
 .TP
 .BR \-i =interface
-Nasloucha na danem sitovem rozhrani a zpracovava DNS provoz.
+Application will listen on a live interface
 .TP
 .BR \-s =syslog-server
-Hostname/IPv4/IPv6 adresa syslog serveru.
+Hostname/IPv4/IPv6 address of the syslog server.
 .TP
 .BR \-t =seconds
-Doba vypoctu statistik, vychozi hodnota 60s.
+Time of the interval between dispatching of the statistics to syslog server in seconds.

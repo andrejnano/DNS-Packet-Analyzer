@@ -1,11 +1,28 @@
-#include "config.h"
+/**
+ *  @file       config.cc
+ *  @author     Andrej Nano (xnanoa00)
+ *  @date       2018-11-19
+ *  @version    1.0
+ * 
+ *  @brief  DNS protocol information export using the Syslog protocol | ISA 2018/19 (Export DNS informací pomocí protokolu Syslog)
+ *  
+ *  @section Description
+ *  This program creates statistics about DNS communication and exports them to a syslog server.
+ */
+
 #include <unistd.h>
+#include "config.h"
+#include "misc.h"
 
 // commonly used std objects.. really no need to be careful about poluting namespace
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
+
+//---------------------
+// basic setters
+//------------------
 
 void Config::setPcap(std::string value)
 {
@@ -44,7 +61,6 @@ std::unique_ptr<Config> parseArguments(int argc, char **argv)
 
     // new configuration
     //auto tmpConfig = make_unique<Config>();
-
     std::unique_ptr<Config> tmpConfig (new Config);
 
     // utility variable
@@ -71,14 +87,14 @@ std::unique_ptr<Config> parseArguments(int argc, char **argv)
                 break;
             case '?':
                 if (optopt == 'r' || optopt == 'i' || optopt == 's' || optopt == 't')
-                    cerr << "Option -" << static_cast<char>(optopt) << " requires an argument." << endl;
+                    std::cerr << RED << "ERROR" << RESET << ": Option -" << static_cast<char>(optopt) << " requires an argument." << endl;
                 else if (isprint(optopt))
-                    cerr << "Uknown option '-" << static_cast<char>(optopt) << "'" << endl;
+                   std::cerr << RED << "ERROR" << RESET << ": Uknown argument option '-" << static_cast<char>(optopt) << "'" << endl;
                 else
-                    cerr << "Unknown option character. " << endl;
+                    std::cerr << RED << "ERROR" << RESET << ": Unknown argument option character. " << endl;
                 exit(1); break;
             default:
-                cerr << "Unknown getopt() error occured." << endl;
+                std::cerr << RED << "ERROR" << RESET << ": Unknown getopt() error occured." << std::endl;
                 exit(1); break;
         }
     }
@@ -86,21 +102,21 @@ std::unique_ptr<Config> parseArguments(int argc, char **argv)
     // check for invalid argument combinations
     if (tmpConfig->isInterfaceSet() && tmpConfig->isPcapSet())
     {
-        std::cerr << "-i && -r sa navzajom vylucuju" << std::endl;
+        std::cerr << RED << "ERROR" << RESET << ": both -i && -r arguments cannot be combined." << std::endl;
         return nullptr;
     }
     
     // check for pcap + time combination which is ivalid
     if (tmpConfig->isPcapSet() && tmpConfig->isTimeSet())
     {
-        std::cerr << "-r && -t spolocne nemaju vyznam" << std::endl;
+        std::cerr << RED << "ERROR" << RESET << ": -r && -t arguments cannot be combined." << std::endl;
         return nullptr;
     }
 
     if ((!tmpConfig->isPcapSet() && !tmpConfig->isInterfaceSet() && tmpConfig->isSyslogSet()) ||
         (!tmpConfig->isPcapSet() && !tmpConfig->isInterfaceSet() && tmpConfig->isTimeSet()))
     {
-        std::cerr << "-i alebo -r musi byt nastavene" << std::endl;
+        std::cerr << RED << "ERROR" << RESET << ": either -i or -r must be set." << std::endl;
         return nullptr;
     }
 

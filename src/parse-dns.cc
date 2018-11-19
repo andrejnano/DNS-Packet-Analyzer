@@ -1,5 +1,18 @@
+/**
+ *  @file       parse-dns.cc
+ *  @author     Andrej Nano (xnanoa00)
+ *  @date       2018-11-19
+ *  @version    1.0
+ * 
+ *  @brief  DNS protocol information export using the Syslog protocol | ISA 2018/19 (Export DNS informací pomocí protokolu Syslog)
+ *  
+ *  @section Description
+ *  This program creates statistics about DNS communication and exports them to a syslog server.
+ */
+
 #include <netinet/in.h>
 #include <sstream>
+#include <cctype>
 #include <iomanip>
 
 #include "dns-header.h"
@@ -492,13 +505,14 @@ std::string parse_dns_answer_rdata_ds(const u_char* bytes, int32_t packet_offset
 
     std::string digest;
 
+    // parse until the supposed end of RDATA is reached
     while(packet_offset_size < static_cast<int32_t>(end_of_rdata))
     {
         uint8_t* octet = (uint8_t*) (bytes + packet_offset_size);
         packet_offset_size += sizeof(*octet);
         
         std::stringstream hexvalue;
-        hexvalue << std::hex << (int) *octet << std::dec;
+        hexvalue << std::hex << (int) *octet << std::dec << " ";
         digest.append(hexvalue.str());
     }
 
@@ -507,7 +521,7 @@ std::string parse_dns_answer_rdata_ds(const u_char* bytes, int32_t packet_offset
     output << "\"" << key_tag_str << " "
                    << algorithm_str << " "
                    << digest_type_str << " "
-                   << "( " << digest << " )\"";
+                   << "( " << digest << ")\"";
     return output.str();
     
 }
