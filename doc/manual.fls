@@ -198,6 +198,9 @@ INPUT ./images/dns-question.png
 INPUT ./images/dns-rr.png
 INPUT ./images/dns-rr.png
 INPUT ./images/dns-rr.png
+INPUT ./images/dns-diagram.png
+INPUT ./images/dns-diagram.png
+INPUT ./images/dns-diagram.png
 OUTPUT sections/03-implementation.aux
 INPUT sections/03-implementation.tex
 INPUT sections/03-implementation.tex

@@ -1,6 +1,8 @@
 
 \section{Implementation}
 
+Application was implemented in \textbf{C++} \textit{(C++ 11 standard)}.
+
 \subsection{Project structure}
 
 \dirtree{%
@@ -118,16 +120,16 @@ int32_t parse_dns_answer(const u_char* bytes, int32_t packet_offset_size);
 \vspace{1cm}
 \textbf{Parsing of the character-string type of fields} \textit{(/src/parse-dns.h)}
 \begin{lstlisting}[language=C++]
-    /**
-     *  @brief Parse one or more <character-string>s and save them into a string
-     * 
-     *  @param bytes pointer to the packet
-     *  @param packet_offset_size current offset in the packet
-     *  @param name string to which the parsed content will be stored
-     * 
-     *  @return updated packet_offset_size
-     */
-    size_t parse_dns_string(const u_char* bytes, int32_t packet_offset_size, std::string &name);
+/**
+  *  @brief Parse one or more <character-string>s and save them into a string
+  *
+  *  @param bytes pointer to the packet
+  *  @param packet_offset_size current offset in the packet
+  *  @param name string to which the parsed content will be stored
+  * 
+  *  @return updated packet_offset_size
+  */
+size_t parse_dns_string(const u_char* bytes, int32_t packet_offset_size, std::string &name);
 \end{lstlisting}
 
 \pagebreak
@@ -135,7 +137,7 @@ int32_t parse_dns_answer(const u_char* bytes, int32_t packet_offset_size);
 \subsection{Runtime flow structure}
 
 \begin{enumerate}
-\item declarations, signals, globals setup
+\item declarations, signals setup, globals setup
 \item argument parsing
 \item execution mode split
 \begin{enumerate}[label=(\alph*)]
@@ -144,22 +146,27 @@ int32_t parse_dns_answer(const u_char* bytes, int32_t packet_offset_size);
 \item create pcap handle
 \item set options for sniffing
 \item compile \& apply filter ("port 53")
-\item create new thread for regular exporting
-\item start analyzing packets
+\item create new thread for regular dispatch of statistics to a syslog server
+\item start analyzing packets and collecting statistics
+\item end on SIGINT
 \end{enumerate}
 \item offline file reading
 \begin{enumerate}
 \item open the file
-\item start analyzing packets
-\end{enumerate}
-\end{enumerate}
+\item start analyzing packets and collecting statistics
+\item dispatch statistics to a syslog server
 \item exit
 \end{enumerate}
+\end{enumerate}
 
-\subsection{Limitations}
+\end{enumerate}
+
+\subsection{Limitations and issues}
 
 \begin{enumerate}
 \item Application doesn't support TCP fragmentation of packets.
 \item Application doesn't support other link layer types than Ethernet \& Linux SLL
-\item 
+\item Application only supports certain DNS resource record types
+\item There is no mutex / concurent access precaution when dealing with statistics vector from multiple threads.
+\item Syslog messages include only \textit{hostname} of the client in the hostname field ( FQDN or dynamic IP or static IP lookup not implemented)
 \end{enumerate}

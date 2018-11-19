@@ -1,6 +1,6 @@
 \section{Design}
 
-\subsection{Description/About}
+\subsection{Problem analysis}
 
 Assignment for this project can be divided into these subtasks:
 \begin{enumerate}
@@ -9,12 +9,12 @@ Assignment for this project can be divided into these subtasks:
 \item Exporting to a Syslog server
 \end{enumerate}
 
-\vspace{1cm}
+\vspace{0.5cm}
 \textbf{User input handling}
 
 This task includes argument parsing, asserting for certain input conditions and general execution configurations.
 
-\vspace{1cm}
+\vspace{0.5cm}
 \textbf{Processing of DNS data}
 
 While the processing of DNS messages could be considered as the primary task of this project, several prior processing steps are required for an effective DNS analysis.
@@ -23,7 +23,6 @@ First, L2 or the link layer protocols are parsed, with support of Ethernet and L
 Then, L4 or transport layer protocols are parsed (TCP and UDP). Finally, L7 or the application layer is unveiled and DNS data can be parsed.
 
 \vspace{0.5cm}
-
 All of the DNS communication is carried in a single format called \textit{a message}.
 To properly parse \textit{a message}, it's structure needs to be understood.
 
@@ -89,11 +88,11 @@ In this project, these DNS record types will be supported:
 
 \vspace{0.5cm}
 
-For all of these records, there is a specific parser implemented. 
+For all of these records, there should be a specific parser implemented. 
 The parser will output a string in a readable format and together 
-with the message's question name and type, will be stored in a statistics collection.
+with the question name and type of the message, will be stored in a statistics collection.
 If the same DNS resource record will be collected multiple times, 
-it's count will increase rather than being inserted into the collection redundantly.
+its count will increase rather than being inserted into the collection redundantly.
 
 \pagebreak
 
@@ -102,6 +101,14 @@ it's count will increase rather than being inserted into the collection redundan
 The final task is to export collected statistics one by one to a foreign syslog server, if it was specified.
 This simply means, that the application will create a new UDP socket, on which it will send simple messages 
 in the official Syslog format specified in RFC 5424.
+
+Example of a syslog message:
+
+\texttt{<134>1 2018-09-20T22:14:15.003Z 192.0.2.1 dns-export - - - goo.gl A 172.217.23.238 5}
+
+This message contains: \texttt{priority, version, datetime, hostname, executable and msg}
+
+\pagebreak
 
 \subsection{Requirements}
 
@@ -136,7 +143,7 @@ Functional requirements from the assignment.
 \textit{REQ\_06\_01\_01} & If syslog-server argument is also set, application will export statistics in regular intervals. \\ \midrule
 \textit{REQ\_06\_01\_01a} & If seconds argument is also set, interval of statistics exporting is defined by this argument. \\ \midrule
 \textit{REQ\_06\_01\_01b} & If seconds argument is not set, interval of statistics exporting is implicitly 60 seconds. \\ \midrule
-\textit{REQ\_06\_01\_02} & If syslog-server argument is not set, application will ???? TODO \\ \midrule
+\textit{REQ\_06\_01\_02} & If syslog-server argument is not set, application will only collect statistics \\ \midrule
 \textit{REQ\_06\_02} & If file argument is set, application will read from a static .pcap file. \\ \midrule
 \textit{REQ\_06\_02\_01} & Application should accept only .pcap files, or return error when pcap analysis doesn't accept the file. \\ \midrule
 \textit{REQ\_06\_02\_02} & If syslog-server argument is also set, application will export statistics at the end of analysis. \\ \midrule
@@ -159,6 +166,16 @@ Functional requirements from the assignment.
 
 \subsection{Solution}
 
-Programming language used for the implementation: \textbf{C++} in a \textit{C++11 standard}.
+Application is able to run in two modes:
+\begin{enumerate}
+\item Static file analysis
+\item Live interface analysis
+\end{enumerate}
 
-Final solution is in my opinion complete, satisfying all the specified requirements in the previous section.
+For the "live" mode, there is a need for a separate thread of processing, as the timer will dispatch messages while the packet analysis still goes on.
+To allow both threads to access statistics, stored in a vector structure, there will be a pointer to this structure placed in a global scope.
+
+\vspace{1cm}
+\textbf{Approximate structure of the application: }
+
+\includegraphics[width=\textwidth]{dns-diagram}

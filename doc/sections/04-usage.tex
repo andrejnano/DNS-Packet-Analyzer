@@ -4,7 +4,16 @@
 
 \subsection{Execution details}
 
+After successfuly building the project using \textbf{Makefile}, application can be executed from a command line environment.
 
+To collect statistics from a \textbf{live interface}, use the \textbf{-i} argument and specify the interface name.
+To display statistics collected so far during a live capture, send SIGUSR signal to the process of the running application.
+To stop collecting statistics and exit from the apllication, send SIGINT signal to the application (for example using CTRL+C inside the terminal).
+To change the time for regular statistic dispatching, use the \textbf{-t} argument.
+
+To process an \textbf{offline *.pcap file}, use the \textbf{-r} argument and specify a path to the file.
+
+To specify the syslog server for statistics export, use the \textbf{-s} argument and specify either hostname or ipv4/ipv6 address pointing to the server.
 
 \subsection{Examples}
 
