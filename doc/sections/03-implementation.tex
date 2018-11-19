@@ -33,48 +33,48 @@ Since the primary objective of this project is to process DNS packets, the follo
 \vspace{1cm}
 \textbf{Packet processing loop} \textit{(/src/dns-export.cc)}
 \begin{lstlisting}[language=C++] 
-    // analyze packets returned by the handle
-    if (pcap_loop(pcap_handle, -1, pcap_analysis, reinterpret_cast<u_char*>(&link_type)) != 0)
-    {
-        std::cerr << "packet reading failed" << std::endl;
-        return EXIT_FAILURE;
-    }
-\end{lstlisting}
-
-\vspace{1cm}
-\textbf{Parsing of the DNS frame the application layer} \textit{(/src/parse-dns.h)}
-\begin{lstlisting}[language=C++] 
-   
-    /**
-     *  @brief Parse DNS frame of the packet
-     * 
-     *  @param bytes pointer to the packet
-     *  @param packet_offset_size current offset in the packet
-     */
-    void parse_dns(const u_char* bytes, int32_t packet_offset_size);
-
+// analyze packets returned by the handle
+if (pcap_loop(pcap_handle, -1, pcap_analysis, reinterpret_cast<u_char*>(&link_type)) != 0)
+{
+    std::cerr << "packet reading failed" << std::endl;
+    return EXIT_FAILURE;
+}
 \end{lstlisting}
 
 \pagebreak
 
 \vspace{1cm}
+\textbf{Parsing of the DNS frame the application layer} \textit{(/src/parse-dns.h)}
+\begin{lstlisting}[language=C++] 
+   
+/**
+*  @brief Parse DNS frame of the packet
+* 
+*  @param bytes pointer to the packet
+*  @param packet_offset_size current offset in the packet
+*/
+void parse_dns(const u_char* bytes, int32_t packet_offset_size);
+
+\end{lstlisting}
+
+\vspace{1cm}
 \textbf{Parsing of DNS Questions \& Answers sections} \textit{(/src/parse-dns.h)}
 \begin{lstlisting}[language=C++] 
-    /**
-     *  @brief Parse a Question in the Questions section on the DNS frame of the packet
-     * 
-     *  @param bytes pointer to the packet
-     *  @param packet_offset_size current offset in the packet
-     */
-    size_t parse_dns_question(const u_char* bytes, int32_t packet_offset_size);
+/**
+  *  @brief Parse a Question in the Questions section on the DNS frame of the packet
+  * 
+  *  @param bytes pointer to the packet
+  *  @param packet_offset_size current offset in the packet
+  */
+size_t parse_dns_question(const u_char* bytes, int32_t packet_offset_size);
 
-    /**
-     *  @brief Parse an Answer in the Answers section in the DNS frame of the packet
-     * 
-     *  @param bytes pointer to the packet
-     *  @param packet_offset_size current offset in the packet
-     */
-    int32_t parse_dns_answer(const u_char* bytes, int32_t packet_offset_size);
+/**
+  *  @brief Parse an Answer in the Answers section in the DNS frame of the packet
+  * 
+  *  @param bytes pointer to the packet
+  *  @param packet_offset_size current offset in the packet
+  */
+int32_t parse_dns_answer(const u_char* bytes, int32_t packet_offset_size);
 \end{lstlisting}
 
 \vspace{1cm}
@@ -91,6 +91,8 @@ Since the primary objective of this project is to process DNS packets, the follo
      */
     std::string parse_dns_answer_rdata( const u_char* bytes, int32_t packet_offset_size, uint16_t rdata_length, uint16_t type);
 \end{lstlisting}
+
+\pagebreak
 
 \vspace{1cm}
 \textbf{Parsing of the domain-name type of fields} \textit{(/src/parse-dns.h)}
@@ -127,6 +129,8 @@ Since the primary objective of this project is to process DNS packets, the follo
      */
     size_t parse_dns_string(const u_char* bytes, int32_t packet_offset_size, std::string &name);
 \end{lstlisting}
+
+\pagebreak
 
 \subsection{Runtime flow structure}
 
