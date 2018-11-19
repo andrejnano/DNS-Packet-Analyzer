@@ -28,7 +28,7 @@ All of the DNS communication is carried in a single format called \textit{a mess
 To properly parse \textit{a message}, it's structure needs to be understood.
 
 \begin{figure}[h]
-\includegraphics[width=12cm]{dns-message-structure}
+\includegraphics[width=18cm]{dns-message-structure}
 \centering
 \caption{4.1. Format | RFC 1035}
 \end{figure}
@@ -36,7 +36,7 @@ To properly parse \textit{a message}, it's structure needs to be understood.
 \pagebreak
 
 \begin{figure}[h]
-\includegraphics[width=12cm]{dns-header}
+\includegraphics[width=10cm]{dns-header}
 \centering
 \caption{4.1.1. Header section format | RFC 1035}
 \end{figure}
@@ -48,33 +48,52 @@ This can be used for more directed parsing and filtering out those messages that
 
 \vspace{1cm}
 \begin{figure}[h]
-\includegraphics[width=12cm]{dns-question}
+\includegraphics[width=10cm]{dns-question}
 \centering
 \caption{4.1.2. Question section format | RFC 1035}
 \end{figure}
 
-\textbf{Question section} of every DNS packet should contain an initial query. 
+\textbf{Question section} of every DNS packet should contain an initial query record. 
 
-Queries contain three fields: \textit{QNAME}, \textit{QTYPE} and \textit{QCLASS}.
+Queries records contain three fields: \textit{QNAME}, \textit{QTYPE} and \textit{QCLASS}.
 
 \vspace{1cm}
-\begin{figure}[h]
-\includegraphics[width=12cm]{dns-rr}
+\begin{figure}[H]
+\includegraphics[width=10cm]{dns-rr}
 \centering
 \caption{4.1.3. Resource record format | RFC 1035}
 \end{figure}
 
 \textbf{Answer section} is the most meaningful section of a DNS message, as it contains the valuable response/responses for each query.
 Answer sections shares the same format of resource records as the two other sections following it (Authority and Additional), however they are not used in this project.
-Answers contain three fields: \textit{NAME}, \textit{TYPE}, \textit{CLASS}, \textit{TTL}, \textit{RDLENGTH} and most importantly, \textit{RDATA}.
+Answers contain three fields: \textit{NAME}, \textit{TYPE}, \textit{CLASS}, \textit{TTL}, \textit{RDLENGTH} and \textit{RDATA}.
+
+\textbf{RDATA} holds the actual response value during a DNS communication.
+It can be represeted in various formats according to the DNS message type.
+
+In this project, these DNS record types will be supported:
+\begin{itemize}
+\item \textbf{A} - Address record 
+\item \textbf{AAAA} - IPv6 address record
+\item \textbf{CNAME} - Canonical name record
+\item \textbf{NS} - Name server record
+\item \textbf{SOA} - Start of authority record
+\item \textbf{PTR} - Pointer record
+\item \textbf{MX} - Mail exchange record
+\item \textbf{TXT} - Text record
+\item \textbf{RRSIG} - DNSSEC signature
+\item \textbf{NSEC} - Next Secure record
+\item \textbf{DS} - Delegation signer
+\item \textbf{DNSKEY} - DNS Key record
+\end{itemize}
 
 
-
+\pagebreak
 
 \subsection{Requirements}
-% Please add the following required packages to your document preamble:
-% \usepackage{booktabs}
-% \usepackage{graphicx}
+
+Functional requirements from the assignment.
+
 \begin{table}[H]
 \centering
 \caption{Requirements}
@@ -125,5 +144,10 @@ Answers contain three fields: \textit{NAME}, \textit{TYPE}, \textit{CLASS}, \tex
 }
 \end{table}
 
+\pagebreak
+
 \subsection{Solution}
 
+Programming language used for the implementation: \textbf{C++} in a \textit{C++11 standard}.
+
+Final solution is in my opinion complete, satisfying all the specified requirements in the previous section.
