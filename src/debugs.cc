@@ -1,4 +1,16 @@
 
+/*****************************************************************************
+ *                                                                           
+ * 
+ *          THIS SOURCE FILE INCLUDES DEVELOPEMENT DEBUG HELPERS
+ *          
+ *          for simplicity and building without problems,
+ *          I commented out all the functions.
+ *
+ */ 
+/*****************************************************************************/
+
+/*
 #include <iostream>
 #include <iomanip>
 #include <netinet/in.h>
@@ -11,16 +23,15 @@
 
 #include <time.h>
 
-
 #include "misc.h"
 #include "dns-header.h"
 
-/*
+
 void print_filler() {
     std::cout << "|" << std::setfill(' ') << std::setw(48);
 }
 
-void print_offset(size_t packet_offset_size) {
+void print_offset(int32_t packet_offset_size) {
     std::cout << "|\t" << BLINK << ITALIC << BG_BLUE << "@OFFSET:" << BOLD << " +" << std::setfill('0') << std::setw(3) << packet_offset_size << "B" << RESET;
 }
 
@@ -43,7 +54,7 @@ void debug_print_packet_end() {
     std::cout << "+" << std::setfill('-') << std::setw(120) << "+" << RESET << std::endl;
 }
 
-void debug_print_eth(const u_short eth_type, struct ether_header * eth_hdr, size_t packet_offset_size) {
+void debug_print_eth(const u_short eth_type, struct ether_header * eth_hdr, int32_t packet_offset_size) {
     print_offset(packet_offset_size);
     std::cout << " | " << RESET << "(L2) - 🔌  <";
     std::cout << GREEN << BOLD << "ETH" << RESET;
@@ -53,7 +64,7 @@ void debug_print_eth(const u_short eth_type, struct ether_header * eth_hdr, size
     std::cout << "] [type: " << BOLD << "0x" << std::setfill('0') << std::setw(4) << std::hex << eth_type << std::dec << RESET << "] " << std::endl;
 }
 
-void debug_print_ip(const u_short eth_type, const struct ip* ip_hdr, size_t packet_offset_size) {
+void debug_print_ip(const u_short eth_type, const struct ip* ip_hdr, int32_t packet_offset_size) {
     print_offset(packet_offset_size);
     std::cout << " | " << RESET << "(L3) - 💻  <";
     if (eth_type == ETHERTYPE_IP) {
@@ -68,7 +79,7 @@ void debug_print_ip(const u_short eth_type, const struct ip* ip_hdr, size_t pack
 
 }
 
-void debug_print_udp(const struct udphdr* udp_hdr, size_t packet_offset_size) {
+void debug_print_udp(const struct udphdr* udp_hdr, int32_t packet_offset_size) {
     print_offset(packet_offset_size);
     std::cout << " | " << RESET << "(L4) - 🚚  <";
     std::cout << RED << BOLD << "UDP" << RESET;
@@ -77,7 +88,7 @@ void debug_print_udp(const struct udphdr* udp_hdr, size_t packet_offset_size) {
     std::cout << ", dst port: " << BOLD << RED << std::setfill(' ') << std::setw(17) << ntohs(udp_hdr->uh_dport) << RESET << "]" << std::endl;
 }
 
-void debug_print_tcp(const struct tcphdr* tcp_hdr, size_t packet_offset_size) {
+void debug_print_tcp(const struct tcphdr* tcp_hdr, int32_t packet_offset_size) {
     print_offset(packet_offset_size);
     std::cout << " | " << RESET << "(L4) - 🚚  <";
     std::cout << YELLOW << BOLD << "TCP" << RESET;
@@ -87,7 +98,7 @@ void debug_print_tcp(const struct tcphdr* tcp_hdr, size_t packet_offset_size) {
     std::cout << "] [seq: " <<  ntohs(tcp_hdr->th_seq) << "]" << std::endl;
 }
 
-void debug_print_dns(size_t packet_offset_size, dnshdr * dns_hdr) {
+void debug_print_dns(int32_t packet_offset_size, dnshdr * dns_hdr) {
     print_offset(packet_offset_size);
     std::cout << " | " << RESET << "(L7) - 🔗  <";
     std::cout << MAGENTA << BOLD << "D" << CYAN << "N" << RED << "S" << RESET;

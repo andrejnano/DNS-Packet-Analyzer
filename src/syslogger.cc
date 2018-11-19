@@ -165,6 +165,7 @@ std::string SysLogger::syslog_format(std::string raw_message, std::string execut
             << timestamp << "." << std::setfill('0') << std::setw(3) << ms << "Z "
             << hostname << " "
             << executable << " "
+            << pid << " "
             << "- - - " << raw_message;
 
     return output.str();

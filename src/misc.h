@@ -19,15 +19,15 @@
     #define RESET       "\033[0m"
     
     void print_filler();
-    void print_offset(size_t packet_offset_size);
+    void print_offset(int32_t packet_offset_size);
     void debug_print_packet_start(const struct pcap_pkthdr* h);
     void debug_print_packet_end();
 
-    void debug_print_eth(const u_short eth_type, struct ether_header * eth_hdr, size_t packet_offset_size);
-    void debug_print_ip(const u_short eth_type, const struct ip* ip_hdr, size_t packet_offset_size);
-    void debug_print_udp(const struct udphdr* udp_hdr, size_t packet_offset_size);
-    void debug_print_tcp(const struct tcphdr* tcp_hdr, size_t packet_offset_size);
+    void debug_print_eth(const u_short eth_type, struct ether_header * eth_hdr, int32_t packet_offset_size);
+    void debug_print_ip(const u_short eth_type, const struct ip* ip_hdr, int32_t packet_offset_size);
+    void debug_print_udp(const struct udphdr* udp_hdr, int32_t packet_offset_size);
+    void debug_print_tcp(const struct tcphdr* tcp_hdr, int32_t packet_offset_size);
 
-    void debug_print_dns(size_t packet_offset_size, dnshdr * dns_hdr);
+    void debug_print_dns(int32_t packet_offset_size, dnshdr * dns_hdr);
 
 #endif // MISC_H_ 

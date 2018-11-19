@@ -1,0 +1,182 @@
+#ifndef __FAVOR_BSD
+#define __FAVOR_BSD
+#endif
+
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
+#include <netinet/if_ether.h> 
+#include <iostream>
+#include <iomanip>
+
+#include "pcap_analysis.h"
+#include "parse-dns.h"
+#include "misc.h"
+
+/**
+ * @brief Layer by layer analysis of packets from either ``static file`` or a live interface
+ * 
+ * @description Analysis starts by parsing L2 layer, accepting only ethernet or Linux SSL frames.
+ * Then, depending on the underlying network protocol type, parsing of the L3 layer begins.
+ * Both IPv4 and IPv6 are accepted. Next, transport protocols on the L4 layer are parsed (TCP or UDP).
+ * After the parsing completes successfuly, DNS parsing in a separate functions is initiated, 
+ * taking the current packet offset and pointer to the packet data
+ * 
+ * @param custom argument passed in the callback, in this case a link layer type should be used
+ * @param h pcap header containing the current packet's length, timestamp, etc.
+ * @param bytes pointer to the actual data of the current packet
+ */
+void pcap_analysis(u_char* user_argument, const struct pcap_pkthdr* h, const u_char* bytes)
+{
+    // size of the whole packet in bytes
+    const int32_t full_packet_size = static_cast<int32_t>(h->len);
+    // dynamic size of the offset inside the current packet
+    int32_t packet_offset_size = 0;
+    // passed in link layer header type depending on the opened interface [ result from pcap_datalink() ]
+    const uint16_t link_type = (*( (uint16_t*) user_argument ));
+    // network protocol type
+    uint16_t net_type;
+
+    /*************************************************************************/
+    /* -> L2 | ETHERNET FRAME                                                */
+    /*************************************************************************/
+    if (link_type == LINKTYPE_ETHERNET)
+    {
+        struct ether_header * eth_hdr = (struct ether_header*) bytes;
+        net_type = ntohs(eth_hdr->ether_type);
+        packet_offset_size += sizeof(*eth_hdr);
+    }
+    /*************************************************************************/
+    /* -> L2 | LINUX COOKED CAPTURE FRAME                                    */
+    /*************************************************************************/
+    else if (link_type == LINKTYPE_LINUX_SLL)
+    {
+        struct linuxhdr * linux_hdr = (struct linuxhdr*) bytes;
+        net_type = ntohs(linux_hdr->protocol_type);
+        packet_offset_size += sizeof(*linux_hdr);
+    }
+    /*************************************************************************/
+    /* -> L2 | UNSUPPORTED LINK TYPE                                         */
+    /*************************************************************************/
+    else { return; } // skip
+
+    //-----------------------------------------------------------------------\\
+
+    /*************************************************************************/
+    /* -> L3 | IPv4                                                          */
+    /*************************************************************************/
+    if (net_type == ETHERTYPE_IP)
+    {
+        const struct ip* ip4_hdr = (struct ip*) (bytes + packet_offset_size);
+        packet_offset_size += ip4_hdr->ip_hl * 4;
+
+        // access the underlying transport protocol type from the IP header
+        const u_char transport_protocol = ip4_hdr->ip_p;
+
+        /*********************************************************************/
+        /* -> L4 | UDP                                                       */
+        /*********************************************************************/
+        if (transport_protocol == IPPROTO_UDP)
+        {   
+            const struct udphdr* udp_hdr = (struct udphdr *) (bytes + packet_offset_size);
+            packet_offset_size += sizeof(*udp_hdr);
+        }
+        /*********************************************************************/
+        /* -> L4 | TCP                                                       */
+        /*********************************************************************/
+        else if (transport_protocol == IPPROTO_TCP)
+        {
+            const struct tcphdr* tcp_hdr = (struct tcphdr *) (bytes + packet_offset_size);
+            
+             // skip tcp header size
+            #if (defined(__FAVOR_BSD))
+            packet_offset_size += tcp_hdr->th_off * 4;
+            #else
+            packet_offset_size += tcp_hdr->doff * 4;
+            #endif
+            
+            // DNS in TCP has 2 octets 
+            uint16_t* dns_message_length = (uint16_t*) (bytes + packet_offset_size);
+            packet_offset_size += sizeof(dns_message_length);
+
+            // if the DNS length is greater than the TCP payload (without the 2 octets of dns length)
+            // then skip this packet
+            if ( (full_packet_size - packet_offset_size) < ntohs(*dns_message_length))
+            {
+                return;
+            }
+            
+        }
+        /*********************************************************************/
+        /* -> L4 | UNSUPPORTED                                               */
+        /*********************************************************************/
+        else { return; }
+    }
+    /*************************************************************************/
+    /* -> L3 | IPv6                                                          */
+    /*************************************************************************/
+    else if (net_type == ETHERTYPE_IPV6)
+    {
+        // cast the IPv6 header & increase the offset
+        const struct ip6_hdr* ip6_hdr = (struct ip6_hdr*) (bytes + packet_offset_size);
+        packet_offset_size += sizeof(*ip6_hdr);
+        
+        // access the underlying transport protocol type from the IP header
+        const u_char transport_protocol = ip6_hdr->ip6_ctlun.ip6_un1.ip6_un1_nxt;
+        
+        /*********************************************************************/
+        /* -> L4 | UDP                                                       */
+        /*********************************************************************/
+        if (transport_protocol == IPPROTO_UDP)
+        { 
+            const struct udphdr* udp_hdr = (struct udphdr *) (bytes + packet_offset_size);
+            packet_offset_size += sizeof(*udp_hdr);
+        }
+        /*********************************************************************/
+        /* -> L4 | TCP                                                       */
+        /*********************************************************************/
+        else if (transport_protocol == IPPROTO_TCP)
+        {
+            const struct tcphdr* tcp_hdr = (struct tcphdr *) (bytes + packet_offset_size);
+            
+             // skip tcp header size
+            #if (defined(__FAVOR_BSD))
+            packet_offset_size += tcp_hdr->th_off * 4;
+            #else
+            packet_offset_size += tcp_hdr->doff * 4;
+            #endif
+            
+            // DNS in TCP has 2 octets 
+            uint16_t* dns_message_length = (uint16_t*) (bytes + packet_offset_size);
+            packet_offset_size += sizeof(dns_message_length);
+
+            // if the DNS length is greater than the TCP payload (without the 2 octets of dns length)
+            // then skip this packet
+            if ( (full_packet_size - packet_offset_size) < ntohs(*dns_message_length))
+            {
+                return;
+            }
+        }
+        /*********************************************************************/
+        /* -> L4 | UNSUPPORTED                                               */
+        /*********************************************************************/
+        else { return; }
+    }
+    /*************************************************************************/
+    /* -> L3 | UNSUPPORTED                                                   */
+    /*************************************************************************/
+    else { return; } // skip
+
+    
+    //-----------------------------------------------------------------------\\
+
+    /*************************************************************************/
+    /* -> L5 | D N S                                                         */
+    /*************************************************************************/
+    parse_dns(bytes, packet_offset_size, full_packet_size);
+    /*************************************************************************/
+    /*************************************************************************/
+}

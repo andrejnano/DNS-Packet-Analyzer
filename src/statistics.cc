@@ -34,7 +34,6 @@ void log_answer(std::string domain_name, std::string rr_type, std::string rr_ans
 
 void print_statistics()
 {
-    
     if (Statistics)
     {
         std::vector<StatisticEntry>::iterator it = Statistics->begin();

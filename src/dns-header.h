@@ -128,8 +128,10 @@ typedef struct {
 } dnshdr;
 
 
-/*                DNS HEADER FORMAT                  */
+//          Illustration of the actual bytes
+//                DNS HEADER FORMAT
 //        https://www.ietf.org/rfc/rfc1035.txt
+// 
 //                                   1  1  1  1  1  1
 //     0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
 //   +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+

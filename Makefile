@@ -22,7 +22,7 @@ SRC_FILES := $(wildcard src/*.cc)
 OPTIMIZE = -O2
 
 # Compiling flags
-CXXFLAGS = -std=c++11 -g -Wall -Wextra -lpcap -lpthread
+CXXFLAGS = -std=c++11 -Wall -Wextra -lpcap -lpthread -D__FAVOR_BSD
 
 # -----------------------------
 

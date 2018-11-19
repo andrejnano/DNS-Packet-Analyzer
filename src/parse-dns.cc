@@ -15,10 +15,10 @@ extern std::vector<StatisticEntry> *Statistics;
 // used by the pointers in the NAME fields, which reference by offset in the DNS frame
 size_t DNS_PACKET_STARTING_OFFSET {0};
 
-void parse_dns(const u_char* bytes, size_t packet_offset_size)
+void parse_dns(const u_char* bytes, int32_t packet_offset_size)
 {
     // init the starting offset
-    DNS_PACKET_STARTING_OFFSET = packet_offset_size;
+    DNS_PACKET_STARTING_OFFSET = static_cast<size_t>(packet_offset_size);
 
     // cast DNS header and increase offset
     dnshdr * dns_hdr = (dnshdr*) (bytes + packet_offset_size);
@@ -40,13 +40,14 @@ void parse_dns(const u_char* bytes, size_t packet_offset_size)
     for (uint16_t ancounter = 0 ; ancounter < ntohs(dns_hdr->ancount) ; ancounter++)
     {
         packet_offset_size = parse_dns_answer(bytes, packet_offset_size);
+        if (packet_offset_size == -1) { return; }
     }
 
     /* ignore both AUTHORITY & ADDITIONAL sections */
 }
 
 
-size_t parse_dns_question(const u_char* bytes, size_t packet_offset_size) {
+size_t parse_dns_question(const u_char* bytes, int32_t packet_offset_size) {
     
     // QNAME
     std::string qname;
@@ -63,9 +64,9 @@ size_t parse_dns_question(const u_char* bytes, size_t packet_offset_size) {
     return packet_offset_size;
 }
 
-size_t parse_dns_answer(const u_char* bytes, size_t packet_offset_size) {
-
-    bool is_valid_answer = true;
+int32_t parse_dns_answer(const u_char* bytes, int32_t packet_offset_size)
+{
+    bool is_accepted = true;
 
     // NAME
     std::string aname;
@@ -75,11 +76,10 @@ size_t parse_dns_answer(const u_char* bytes, size_t packet_offset_size) {
     uint16_t * atype = (uint16_t*) (bytes + packet_offset_size);
     packet_offset_size += sizeof(*atype);
     std::string atype_str = dns_type_to_string(ntohs(*atype));
-    
 
     if (atype_str == "")
     {
-        is_valid_answer = false;
+        is_accepted = false;
     }
     
     // CLASS
@@ -97,8 +97,9 @@ size_t parse_dns_answer(const u_char* bytes, size_t packet_offset_size) {
     // corrupted packet, invalid rdlength
     if (ntohs(*ardlength) <= 0) 
     {
-        return packet_offset_size;
+        return -1;
     }
+
 
     // RDATA
     std::string ardata = parse_dns_answer_rdata(bytes, packet_offset_size, ntohs(*ardlength), ntohs(*atype));
@@ -106,10 +107,10 @@ size_t parse_dns_answer(const u_char* bytes, size_t packet_offset_size) {
 
     if (ardata == "")
     {
-        is_valid_answer = false;
+        is_accepted = false;
     }
     
-    if (is_valid_answer)
+    if (is_accepted)
     {
         // create new statistic entry
         log_answer(aname, atype_str, ardata);
@@ -118,7 +119,7 @@ size_t parse_dns_answer(const u_char* bytes, size_t packet_offset_size) {
     return packet_offset_size;
 }
 
-std::string parse_dns_answer_rdata(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length, uint16_t type)
+std::string parse_dns_answer_rdata(const u_char* bytes, int32_t packet_offset_size, uint16_t rdata_length, uint16_t type)
 {
     // depending on the DNS message type, parse the RDATA field differently
     switch (type) {
@@ -176,7 +177,7 @@ std::string parse_dns_answer_rdata(const u_char* bytes, size_t packet_offset_siz
     return "";
 }
 
-size_t parse_dns_string(const u_char* bytes, size_t packet_offset_size, std::string &name)
+size_t parse_dns_string(const u_char* bytes, int32_t packet_offset_size, std::string &name)
 {
     uint8_t *length_octet;
     int length;
@@ -208,7 +209,7 @@ size_t parse_dns_string(const u_char* bytes, size_t packet_offset_size, std::str
 }
 
 
-size_t parse_dns_name_field(const u_char* bytes, size_t packet_offset_size, std::string &name, bool is_pointer_reference) {
+size_t parse_dns_name_field(const u_char* bytes, int32_t packet_offset_size, std::string &name, bool is_pointer_reference) {
     
     // reset the name if parsing a sequence of labels, otherwise dont
     if (!is_pointer_reference)
@@ -225,7 +226,8 @@ size_t parse_dns_name_field(const u_char* bytes, size_t packet_offset_size, std:
     //  - a sequence of labels ending in a zero octet
     //  - a pointer
     //  - a sequence of labels ending with a pointer
-    
+    bool is_first_label = true;
+
     for(;;) {
         label = "";
         length_octet = (uint8_t*) (bytes + packet_offset_size);
@@ -253,15 +255,21 @@ size_t parse_dns_name_field(const u_char* bytes, size_t packet_offset_size, std:
         if (length == 0)
             break;
 
+        // don't add dot separator before the first label
+        if (!is_first_label)
+            label.append(".");
+
         // add each character to the label string
-        for (int i = 0; i < length; i++) {
+        for (int i = 0; i < length; i++)
+        {
             char_octet = (char *) (bytes + packet_offset_size); 
             packet_offset_size += sizeof(*char_octet);
             label.append(char_octet, 0, sizeof(*char_octet));
         }
-
-        label.append(".");
+        
         name.append(label);
+        
+        is_first_label = false;
     }
 
     return packet_offset_size;
@@ -286,7 +294,7 @@ std::string dns_type_to_string(uint16_t type) {
     }
 }
 
-std::string parse_dns_answer_rdata_soa(const u_char* bytes, size_t packet_offset_size) {
+std::string parse_dns_answer_rdata_soa(const u_char* bytes, int32_t packet_offset_size) {
 
     std::string mname;
     packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, mname, false);
@@ -328,7 +336,7 @@ std::string parse_dns_answer_rdata_soa(const u_char* bytes, size_t packet_offset
     return output.str();
 }
 
-std::string parse_dns_answer_rdata_mx(const u_char* bytes, size_t packet_offset_size)
+std::string parse_dns_answer_rdata_mx(const u_char* bytes, int32_t packet_offset_size)
 {
     int16_t * preference = (int16_t*) (bytes + packet_offset_size);
     packet_offset_size += sizeof(*preference);
@@ -347,7 +355,7 @@ std::string parse_dns_answer_rdata_mx(const u_char* bytes, size_t packet_offset_
     return output.str();
 }
 
-std::string parse_dns_answer_rdata_rrsig(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length)
+std::string parse_dns_answer_rdata_rrsig(const u_char* bytes, int32_t packet_offset_size, uint16_t rdata_length)
 {
     size_t end_of_rdata = packet_offset_size + rdata_length;
 
@@ -399,7 +407,7 @@ std::string parse_dns_answer_rdata_rrsig(const u_char* bytes, size_t packet_offs
 }
 
 
-std::string parse_dns_answer_rdata_dnskey(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length)
+std::string parse_dns_answer_rdata_dnskey(const u_char* bytes, int32_t packet_offset_size, uint16_t rdata_length)
 {
     size_t end_of_rdata = packet_offset_size + rdata_length;
     
@@ -427,7 +435,7 @@ std::string parse_dns_answer_rdata_dnskey(const u_char* bytes, size_t packet_off
 }
 
 
-std::string parse_dns_answer_rdata_nsec(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length)
+std::string parse_dns_answer_rdata_nsec(const u_char* bytes, int32_t packet_offset_size, uint16_t rdata_length)
 {
     size_t end_of_rdata = packet_offset_size + rdata_length;
 
@@ -436,7 +444,7 @@ std::string parse_dns_answer_rdata_nsec(const u_char* bytes, size_t packet_offse
     
     std::string type_bit_maps_field;
     
-    while(packet_offset_size < end_of_rdata)
+    while(packet_offset_size < static_cast<int32_t>(end_of_rdata))
     {
         uint8_t* octet = (uint8_t*) (bytes + packet_offset_size);
         packet_offset_size += sizeof(*octet);
@@ -454,7 +462,7 @@ std::string parse_dns_answer_rdata_nsec(const u_char* bytes, size_t packet_offse
 }
 
 
-std::string parse_dns_answer_rdata_ds(const u_char* bytes, size_t packet_offset_size, uint16_t rdata_length)
+std::string parse_dns_answer_rdata_ds(const u_char* bytes, int32_t packet_offset_size, uint16_t rdata_length)
 {
     size_t end_of_rdata = packet_offset_size + rdata_length;
 
@@ -472,7 +480,7 @@ std::string parse_dns_answer_rdata_ds(const u_char* bytes, size_t packet_offset_
 
     std::string digest;
 
-    while(packet_offset_size < end_of_rdata)
+    while(packet_offset_size < static_cast<int32_t>(end_of_rdata))
     {
         uint8_t* octet = (uint8_t*) (bytes + packet_offset_size);
         packet_offset_size += sizeof(*octet);
