@@ -44,10 +44,15 @@
      *  @param packet_offset_size current offset in the packet
      *  @param name string to which the parsed content will be stored
      *  @param is_pointer_reference flag describing the context in which the name parsing is run
+     *  @param depth of the recursive pointer call
      * 
      *  @return updated packet_offset_size
      */
-    size_t parse_dns_name_field(const u_char* bytes, int32_t packet_offset_size, std::string &name, bool is_pointer_reference);
+    int32_t parse_dns_name_field(const u_char* bytes, 
+                                int32_t packet_offset_size, 
+                                std::string &name, 
+                                bool is_pointer_reference,
+                                uint8_t depth = 0);
 
     /**
      *  @brief Parse one or more <character-string>s and save them into a string

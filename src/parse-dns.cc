@@ -209,8 +209,15 @@ size_t parse_dns_string(const u_char* bytes, int32_t packet_offset_size, std::st
 }
 
 
-size_t parse_dns_name_field(const u_char* bytes, int32_t packet_offset_size, std::string &name, bool is_pointer_reference) {
+int32_t parse_dns_name_field(const u_char* bytes, int32_t packet_offset_size, std::string &name, bool is_pointer_reference, uint8_t depth)
+{
     
+    // if there are too many recursive layers
+    if (depth >= 8)
+    {
+        return -1;
+    }
+
     // reset the name if parsing a sequence of labels, otherwise dont
     if (!is_pointer_reference)
     {
@@ -243,7 +250,7 @@ size_t parse_dns_name_field(const u_char* bytes, int32_t packet_offset_size, std
             size_t exact_offset = DNS_PACKET_STARTING_OFFSET + pointer_offset;
 
             // recursively get the name at the specified location
-            parse_dns_name_field(bytes, exact_offset, name, true);
+            parse_dns_name_field(bytes, exact_offset, name, true, depth + 1);
 
             packet_offset_size += sizeof(*pointer);
             return packet_offset_size;
@@ -298,9 +305,11 @@ std::string parse_dns_answer_rdata_soa(const u_char* bytes, int32_t packet_offse
 
     std::string mname;
     packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, mname, false);
+    if (packet_offset_size == -1) { return ""; }
 
     std::string rname;
     packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, rname, false);
+    if (packet_offset_size == -1) { return ""; }
 
     uint32_t * serial = (uint32_t*) (bytes + packet_offset_size);
     packet_offset_size += sizeof(*serial);
@@ -345,6 +354,7 @@ std::string parse_dns_answer_rdata_mx(const u_char* bytes, int32_t packet_offset
     
     std::string exchange;
     packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, exchange, false);
+    if (packet_offset_size == -1) { return ""; }
 
     std::ostringstream output;
     
@@ -389,6 +399,7 @@ std::string parse_dns_answer_rdata_rrsig(const u_char* bytes, int32_t packet_off
 
     std::string signer_name;
     packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, signer_name, 0);
+    if (packet_offset_size == -1) { return ""; }
 
     std::string signature = base64_encode(bytes, end_of_rdata - packet_offset_size);
 
@@ -441,6 +452,7 @@ std::string parse_dns_answer_rdata_nsec(const u_char* bytes, int32_t packet_offs
 
     std::string next_domain_name;
     packet_offset_size = parse_dns_name_field(bytes, packet_offset_size, next_domain_name, 0);
+    if (packet_offset_size == -1) { return ""; }
     
     std::string type_bit_maps_field;
     
