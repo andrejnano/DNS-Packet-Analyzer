@@ -1,20 +1,75 @@
 
-\section{Acknowledgments}
+\section{Acknowledgments / Sources}
 
 The work done on this project was supported by the following sources, guides and code samples.
 
 \subsection{Theoretical understanding}
 
-\url{http://www.linuxfromscratch.org/blfs/view/svn/basicnet/libpcap.html}
+
+\subsubsection{Online articles and guides}
+
+\url{https://0x00sec.org/t/how-do-those-hackers-tools-work-sniffers-part-i/686}
+
+\url{https://0x00sec.org/t/how-do-those-hackers-tools-work-sniffers-part-ii/777/4}
+
+\subsubsection{Official documentations and RFCs}
 
 \url{https://www.tcpdump.org/linktypes.html}
+
 \url{https://www.tcpdump.org/manpages/pcap.3pcap.html}
 
-\href{https://www.ietf.org/rfc/rfc1035.txt}{RFC 1035 - DNS}
+\href{https://www.ietf.org/rfc/rfc1035.txt}{RFC 1035 - DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION}
 
-\href{https://www.ietf.org/rfc/rfc4034.txt}{RFC 4034 - DNSSEC}
+\href{https://tools.ietf.org/html/rfc3596}{RFC 3596 - DNS Extensions to Support IP Version 6}
 
-\href{https://tools.ietf.org/html/rfc5424}{RFC 5424 - Syslog}
+\href{https://www.ietf.org/rfc/rfc4034.txt}{RFC 4034 - Resource Records for the DNS Security Extensions}
+
+\href{https://tools.ietf.org/html/rfc5424}{RFC 5424 - The Syslog Protocol}
 
 \subsection{Used libraries}
+
+This project makes use of these STD C++ libraries:
+
+\begin{lstlisting}[language=C++] 
+#include <memory>
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <unistd.h>
+#include <vector>
+#include <thread>
+#include <chrono>
+#include <sstream>
+#include <signal.h>
+#include <sys/socket.h>
+#include <pcap.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
+#include <netinet/if_ether.h>
+#include <arpa/inet.h>
+#include <netinet/ether.h> 
+#include <time.h>
+#include <pcap/pcap.h>
+#include <syslog.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <time.h>
+#include <netdb.h>
+\end{lstlisting}
+
+
 \subsection{External source code}
+
+For the \textbf{Base64 encoding}, which is used when parsing DNSSEC records, I acknowledge the use of a source code by René Nyffeneggerhis under the specified license conditions.
+
+\url{https://renenyffenegger.ch/notes/development/Base64/Encoding-and-decoding-base-64-with-cpp}
+
+\vspace{1cm}
+For the \textbf{DNS header structure}, which is used when parsing the DNS header section of every packet, I acknowledge the use of a source code from this location:
+
+\url{https://0x00sec.org/t/dns-header-for-c/618}
+
+Use of this resource is permitted by it's author without any limitations.

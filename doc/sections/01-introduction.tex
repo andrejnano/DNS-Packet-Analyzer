@@ -1,34 +1,16 @@
 
 
-% která bude obsahovat uvedení do problematiky, 
-% návrhu aplikace, popis implementace, základní
-% informace o programu, návod na použití. 
-% V dokumentaci se očekává následující:
-%     - titulní strana
-%     - obsah
-%     - logické strukturování textu
-%     - přehled nastudovaných informací z literatury
-%     - popis zajímavějších pasáží implementace
-%     - použití vytvořených programů a literatura.
-
 \section{Introduction}
 
 \subsection{Description/About}
 
-% Short explanation with problem and quick solution explanation.
-% Direction to instantly use by following steps in this section,
-% or reading about the design and implementation in sections 
-% following this one.
-
-% more details about how to use -> skip to Usage
-
 This software project atempts to solve a university networking course (ISA) assignment
-which has following specifications:
+which has the following specifications:
 
-"Target of the projects is to create application, which will be able to process data of the DNS (Domain Name System)
-protocol and will export selected statistics to a central log server using Syslog protocol."
+\textit{"Target of the projects is to create application, which will be able to process data of the DNS (Domain Name System)
+protocol and will export selected statistics to a central log server using Syslog protocol."}
 
-More detailed description of the assignment is in the following section..
+More detailed description of the assignment is in the following sections.
 
 The final state of the solution offered is in my opinion for the most part successfuly complete.
 
@@ -56,6 +38,7 @@ The final state of the solution offered is in my opinion for the most part succe
     \begin{itemize}
     \item \textbf{DNS} (\textit{A, NS, CNAME, SOA, PTR, MX, AAAA, TXT, RRSIG, NSEC, DNSKEY, DS resource record types})
     \end{itemize}
+\item Export of statistics to a syslog server
 \end{itemize} 
 \subsection{Prerequisites}
 
@@ -92,3 +75,5 @@ make
 dns-export [-r file.pcap] [-i interface] [-s syslog-server] [-t seconds]
 \end{lstlisting}
 \end{enumerate}
+
+\textit{More usage details are in the section} \textbf{3}

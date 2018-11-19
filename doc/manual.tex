@@ -69,15 +69,6 @@
 
 \setcounter{chapter}{1}% Not using chapters, but they're used in the counters
 
-\usepackage[
-	sorting=none,
-	minbibnames=8,
-	maxbibnames=9,
-	block=space,
-	backend=biber
-]{biblatex}
-\bibliography{publications}
-
 \usepackage{parskip}
 
 \usepackage{lipsum}
@@ -103,15 +94,5 @@
 \include{sections/04-usage}
 \include{sections/05-acknowledgments}
 
-%============================= BIBLIOGRAPHY ====================================
-
-\section{Sources}
-\label{bib}
-
-% \nocite is used to display all references from publications.bib -- even
-% if they were not cited. 
-\nocite{*}
-
-\printbibliography[heading=none]
 
 \end{document}
