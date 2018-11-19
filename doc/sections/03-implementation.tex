@@ -46,7 +46,22 @@ if (pcap_loop(pcap_handle, -1, pcap_analysis, reinterpret_cast<u_char*>(&link_ty
 \pagebreak
 
 \vspace{1cm}
-\textbf{Parsing of the DNS frame the application layer} \textit{(/src/parse-dns.h)}
+\textbf{Single packet analysis} \textit{(/src/pcap-analysis.h)}
+\begin{lstlisting}[language=C++] 
+/**
+  * @brief Per packet analysis
+  * 
+  * @param user_argument argument passed in to the callback
+  * @param h packet meta with timestamp
+  * @param bytes pointer to the actual packet data
+*/
+void pcap_analysis(u_char* user_argument, const struct pcap_pkthdr* h, const u_char* bytes);
+
+\end{lstlisting}
+
+
+\vspace{1cm}
+\textbf{Parsing of the DNS frame on the application layer} \textit{(/src/parse-dns.h)}
 \begin{lstlisting}[language=C++] 
    
 /**
@@ -79,6 +94,8 @@ size_t parse_dns_question(const u_char* bytes, int32_t packet_offset_size);
 int32_t parse_dns_answer(const u_char* bytes, int32_t packet_offset_size);
 \end{lstlisting}
 
+\pagebreak
+
 \vspace{1cm}
 \textbf{Parsing of RDATA field in DNS Answers section} \textit{(/src/parse-dns.h)}
 \begin{lstlisting}[language=C++] 
@@ -94,7 +111,7 @@ int32_t parse_dns_answer(const u_char* bytes, int32_t packet_offset_size);
     std::string parse_dns_answer_rdata( const u_char* bytes, int32_t packet_offset_size, uint16_t rdata_length, uint16_t type);
 \end{lstlisting}
 
-\pagebreak
+
 
 \vspace{1cm}
 \textbf{Parsing of the domain-name type of fields} \textit{(/src/parse-dns.h)}
